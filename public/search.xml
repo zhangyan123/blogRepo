@@ -1,0 +1,1718 @@
+<!--<?xml version="1.0" encoding="utf-8"?>
+<search>
+    
+    
+    <entry>
+        <title><![CDATA[实现合理的跨域请求]]></title>
+        <url>http://zhangyan123.github.io/2017/08/27/%E8%B7%A8%E5%9F%9F%E8%B5%84%E6%BA%90%E5%85%B1%E4%BA%AB/</url>
+        <content type="html"><![CDATA[<h1 id="原内容已删除，待补充与更新。。。"><a href="#原内容已删除，待补充与更新。。。" class="headerlink" title="原内容已删除，待补充与更新。。。"></a>原内容已删除，待补充与更新。。。</h1>]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> 问题及解决方案 </category>
+            
+            <category> 安全问题 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[移动页面点击击穿问题]]></title>
+        <url>http://zhangyan123.github.io/2017/08/27/%E7%A7%BB%E5%8A%A8%E9%A1%B5%E9%9D%A2%E7%82%B9%E5%87%BB%E5%87%BB%E7%A9%BF%E9%97%AE%E9%A2%98/</url>
+        <content type="html"><![CDATA[<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>在移动端，click 事件有 300ms 的延迟，当 touchend 事件把上层元素隐藏之后，隔了300ms，浏览器触发了 click 事件，但是此时上层元素不见了，所以该事件被派发到了下层元素身上。如果下层对应的元素是一个链接，那页面就会意外地跳转，如果下层元素绑定了其他事件，此时更会有出乎意料的事情发生。</p>
+<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><p>   我们项目当中使用的antd推荐的Fastclick插件,意图解决300ms点击延迟问题，但实际开发当中，发现仍然存在点击穿透的情况（遮罩上方选择学校，遮罩消失之后对应下方的书籍卡片被意外点击，并展示了书籍中的乐谱信息。。。满眼的列表项），起初为了尽快解决问题，在遮罩下方又加了一层透明遮罩绑定click事件（点击消失）当肉盾，事后整理如下：</p>
+<ul>
+<li>fastclick使用touchend事件模拟click触发，并将真正的click事件屏蔽掉，但在某些手机上仍然存在不能屏蔽原生click事件的bug，造成点击事件触发两次的问题。</li>
+<li><p>跨页穿透问题解决方案：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">#preventClick &#123; width:100%; height:100%; position:absolute; z-index:1000; top:0; left:0; &#125;</div><div class="line">&lt;body&gt;</div><div class="line">    &lt;div id=&quot;preventClick&quot;&gt;&lt;/div&gt;</div><div class="line">&lt;/body&gt;</div><div class="line">function onDeviceReady() &#123;</div><div class="line">    setTimeout(function()&#123; $(&apos;#preventClick&apos;).hide(); &#125;, 300);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>本页穿透解决方案：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">#preventClick &#123; width:100%; height:100%; position:absolute; z-index:999; top:0; left:0; &#125;</div><div class="line">&lt;container&gt;</div><div class="line">    &lt;div class=&apos;mask&apos;&gt;&lt;/div&gt;</div><div class="line">    &lt;div id=&quot;preventClick&quot;&gt;&lt;/div&gt;</div><div class="line">&lt;/container&gt;</div><div class="line">&lt;script&gt;</div><div class="line">  document.getElementById(&apos;preventClick&apos;).onclick=function(e)&#123;</div><div class="line">    e.target.style.display=&quot;none&quot;;</div><div class="line">  &#125;;</div><div class="line">&lt;/script&gt;</div></pre></td></tr></table></figure>
+</li>
+<li><p>由于穿透事件是click延迟造成的，只要将click事件用touch或者tap（由Zepto或KISSY库提供，同样由touch模拟出来的。）</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>用户碰触移动页面之后，需要等待一段时间来判断是不是双击（double tap）动作（双击放大），而不是立即响应单击click，等待的这段时间大约是300ms，因此移动端click有300ms延迟，较好解决方法是使用touchend替换click事件，但注意在手势检测中屏蔽掉对以上模拟的影响。</p>
+<h1 id="知识点补充："><a href="#知识点补充：" class="headerlink" title="知识点补充："></a>知识点补充：</h1><ul>
+<li>pointer-events:none；由CSS3提出，不只是禁用链接hover，打开链接等效果，是真实意义上的将onlick事件去掉了，注意该样式只禁用了鼠标事件，对应的键盘事件并没有被禁用（tab选中，Enter提交等）。</li>
+<li><p>PC网页上的大部分操作都是用鼠标的，即响应的是鼠标事件，包括mousedown、mouseup、mousemove和click事件。一次点击行为，可被拆解成：mousedown -&gt; mouseup -&gt; click 三步。</p>
+</li>
+<li><p>手机上没有鼠标，所以就用触摸事件去实现类似的功能。touch事件包含touchstart、touchmove、touchend，注意手机上并没有tap事件。手指触发触摸事件的过程为：touchstart -&gt; touchmove -&gt; touchend -&gt;300ms-&gt;click。</p>
+</li>
+</ul>
+</li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> 问题及解决方案 </category>
+            
+            <category> 移动开发问题 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[归并排序]]></title>
+        <url>http://zhangyan123.github.io/2017/08/16/%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F/</url>
+        <content type="html"><![CDATA[<p>#步骤拆解：</p>
+<ul>
+<li>把长度为n的输入序列分成两个长度为n/2的子序列；</li>
+<li>对这两个子序列分别采用归并排序；</li>
+<li>将两个排序好的子序列合并成一个最终的排序序列。</li>
+</ul>
+<h1 id="简单实现："><a href="#简单实现：" class="headerlink" title="简单实现："></a>简单实现：</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line">function mergeSort(arr) &#123;</div><div class="line">    var len = arr.length;</div><div class="line">    if (len &lt; 2) &#123;</div><div class="line">        return arr;</div><div class="line">    &#125; </div><div class="line">    var middle = Math.floor(len / 2),</div><div class="line">        left = arr.slice(0, middle),</div><div class="line">        right = arr.slice(middle);</div><div class="line">    return merge(mergeSort(left), mergeSort(right));</div><div class="line"></div><div class="line">&#125;</div><div class="line">function merge(left, right) &#123;</div><div class="line">    var result = [];</div><div class="line">    console.time(&apos;归并排序耗时&apos;);</div><div class="line">    while (left.length &amp;&amp; right.length) &#123;</div><div class="line">        if (left[0] &lt; right[0]) &#123;</div><div class="line">            result.push(left.shift());</div><div class="line">        &#125; else &#123;</div><div class="line">            result.push(right.shift());</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    while (left.length) &#123;</div><div class="line">        result.push(left.shift());</div><div class="line">    &#125;</div><div class="line">    while (right.length) &#123;</div><div class="line">        result.push(right.shift());</div><div class="line">    &#125;</div><div class="line">    console.timeEnd(&apos;归并排序耗时&apos;);</div><div class="line">    return result;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>#小结：<br>选择排序时间复杂度为O(n^2),空间复杂度为O(1)，稳定</p>
+<h1 id="图解："><a href="#图解：" class="headerlink" title="图解："></a>图解：</h1><div style="display:inline-block;"><img src="/images/mergesort.gif" alt="myBlog"></div>
+]]></content>
+        
+        <categories>
+            
+            <category> 笔试准备 </category>
+            
+            <category> 基本算法 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> 笔试 </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[选择排序]]></title>
+        <url>http://zhangyan123.github.io/2017/08/16/%E9%80%89%E6%8B%A9%E6%8E%92%E5%BA%8F/</url>
+        <content type="html"><![CDATA[<p>#步骤拆解：</p>
+<ul>
+<li>首先在未排序序列中找到最小（大）元素，存放到排序序列的起始位置，</li>
+<li>然后，再从剩余未排序元素中继续寻找最小（大）元素，然后放到已排序序列的末尾（每趟遍历起始位置向后偏移一位）。以此类推，直到所有元素均排序完毕。</li>
+<li>使用与数据规模较小的数组。</li>
+</ul>
+<h1 id="简单实现："><a href="#简单实现：" class="headerlink" title="简单实现："></a>简单实现：</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">function selectionSort(arr) &#123;</div><div class="line">    var length = arr.length;</div><div class="line">    var minindex, temp;</div><div class="line">    console.time(&apos;选择排序耗时&apos;);</div><div class="line">    for (var i = 0; i &lt; length; i++) &#123;</div><div class="line">        minindex = i;</div><div class="line">        for (var j = i + 1; j &lt; length; j++) &#123;//从未排序的子数组中找到最小数值的角标</div><div class="line">            if (arr[j] &lt; arr[minindex]) &#123;</div><div class="line">                minindex = j;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        temp= arr[minindex];//将最小数与</div><div class="line">        arr[minindex] = arr[i];</div><div class="line">        arr[i] = temp;</div><div class="line">    &#125;</div><div class="line">    console.timeEnd(&apos;选择排序耗时&apos;);</div><div class="line">    return arr;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>#小结：<br>归并排序时间复杂度为O(nlogn),空间复杂度为O(n)，不稳定</p>
+<h1 id="图解："><a href="#图解：" class="headerlink" title="图解："></a>图解：</h1><div style="display:inline-block;"><img src="/images/selectionsort.gif" alt="myBlog"></div>
+]]></content>
+        
+        <categories>
+            
+            <category> 笔试准备 </category>
+            
+            <category> 基本算法 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> 笔试 </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[插入排序]]></title>
+        <url>http://zhangyan123.github.io/2017/08/16/%E6%8F%92%E5%85%A5%E6%8E%92%E5%BA%8F/</url>
+        <content type="html"><![CDATA[<p>#步骤拆解：</p>
+<p>插入排序的思想类似于斗地主时候一边抓牌一边插进已有牌的过程</p>
+<ol>
+<li>从第一个元素开始，该元素可以认为已经被排序；</li>
+<li>取出下一个元素，在已经排序的元素序列中从后向前扫描；</li>
+<li>如果该元素（已排序）大于新元素，将该元素移到下一位置；</li>
+<li>重复步骤3，直到找到已排序的元素小于或者等于新元素的位置；</li>
+<li>将新元素插入到该位置后；</li>
+<li>重复步骤2-5.</li>
+</ol>
+<h1 id="简单实现："><a href="#简单实现：" class="headerlink" title="简单实现："></a>简单实现：</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">function insertionSort(arr) &#123;</div><div class="line">    console.time(&apos;插入排序耗时&apos;);</div><div class="line">    for (var i = 0; i &lt; arr.length; i++) &#123;</div><div class="line">        var key = arr[i];//保存i位置的数值</div><div class="line">        for (var j = i -1; j &gt; 0; j--) &#123;//j用于确定已排序数组的末端，可见第一次赋值操作就将arr[i]覆盖掉了，因此之前的保留是必要的，此后的判断也应使用保留值</div><div class="line">            if (arr[j] &gt; key) &#123;</div><div class="line">                arr[j+1] = arr[j];</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        arr[j+1] = key;//将本轮需插入的值插入到已排序数组中</div><div class="line">    &#125;</div><div class="line">    console.timeEnd(&apos;插入排序耗时&apos;);</div><div class="line">    return arr;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>#小结：<br>插入排序时间复杂度为O(n)-O(n^2),空间复杂度为O(1),稳定</p>
+<h1 id="图解："><a href="#图解：" class="headerlink" title="图解："></a>图解：</h1><div style="display:inline-block;"><img src="/images/insertionsort.gif" alt="myBlog"></div>
+]]></content>
+        
+        <categories>
+            
+            <category> 笔试准备 </category>
+            
+            <category> 基本算法 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> 笔试 </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[冒泡排序]]></title>
+        <url>http://zhangyan123.github.io/2017/08/16/%E5%86%92%E6%B3%A1%E6%8E%92%E5%BA%8F/</url>
+        <content type="html"><![CDATA[<p>#步骤拆解：</p>
+<ul>
+<li>比较相邻的元素。如果第一个比第二个大，就交换它们两个；</li>
+<li>对每一对相邻元素作同样的工作，从开始第一对到未完成排序的最后一对，这样在数组的顶部自动生成一个不断加长的有序数列；</li>
+<li>针对所有的元素重复以上的步骤，除了最后一个；</li>
+<li>重复1-3步，直到排序完成。</li>
+</ul>
+<h1 id="简单实现："><a href="#简单实现：" class="headerlink" title="简单实现："></a>简单实现：</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">function bubbleSort(arr)&#123;</div><div class="line">    var i = arr.length-1;//需要遍历的元素是从第一个到倒数第二个，因为每次比较的是arr[i]与arr[i+1]</div><div class="line">    console.time(&apos;冒泡排序&apos;);</div><div class="line">    while(i&gt;0)&#123;</div><div class="line">        var pos = 0;//每次遍历重新计算最后交换数据的位置</div><div class="line">        for(var j=0;j&lt;i;j++)&#123;</div><div class="line">            if(arr[j]&gt;arr[j+1])&#123;</div><div class="line">                pos =j;</div><div class="line">                arr[j]^=arr[j+1];//亦或可以交换两个不同值的变量的值，如果值相同交换后变成0，需要格外小心。</div><div class="line">                arr[j+1]^=arr[j];</div><div class="line">                arr[j]^=arr[j+1];</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        i=pos;//每次遍历后将下次遍历的终点设置为数组顶部有序数列的开始位置（有序数列不参与下次遍历和交换）</div><div class="line">    &#125;</div><div class="line">     console.timeEnd(&apos;冒泡排序&apos;);   </div><div class="line">    return arr;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>#小结：<br>冒泡排序时间复杂度为O(n)-O(n^2),空间复杂度为O(1),稳定</p>
+<h1 id="图解："><a href="#图解：" class="headerlink" title="图解："></a>图解：</h1><div style="display:inline-block;"><img src="/images/bubblesort.gif" alt="myBlog"></div>
+]]></content>
+        
+        <categories>
+            
+            <category> 笔试准备 </category>
+            
+            <category> 基本算法 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> 笔试 </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[快速排序]]></title>
+        <url>http://zhangyan123.github.io/2017/08/11/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F/</url>
+        <content type="html"><![CDATA[<h1 id="简单实现："><a href="#简单实现：" class="headerlink" title="简单实现："></a>简单实现：</h1><p>注：快排的时间复杂度为O(nlgn)~O(n^2) ,由于使用递归调用栈空间复杂度为O(lgn),快排中相等数值排序之后前后位置可能发生变化，因此为非稳定排序。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">function quicksort(arr) &#123;</div><div class="line">    if (arr.length &lt;= 1) &#123;</div><div class="line">        return arr;</div><div class="line">    &#125; else &#123;</div><div class="line">        var key = Math.floor(arr.length / 2), left = [], right = [];</div><div class="line">        var key = arr.splice(key, 1)[0];</div><div class="line">        for (var i = 0; i &lt; arr.length; i++) &#123;</div><div class="line">            if (arr[i] &lt; key) &#123;</div><div class="line">                left.push(arr[i]);</div><div class="line">            &#125; else &#123;</div><div class="line">                right.push(arr[i]);</div><div class="line">            &#125;</div><div class="line"></div><div class="line">        &#125;</div><div class="line">        return quicksort(left).concat([key], quicksort(right));</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h1 id="小结："><a href="#小结：" class="headerlink" title="小结："></a>小结：</h1><p>它是图灵奖得主C. A. R. Hoare（1934–）于1960时提出来的。<br>排序的思路分为三步：  </p>
+<ul>
+<li>选择基准值；</li>
+<li>遍历整个数组，小于基准值的数放在基准左边，否则放在基准右边；</li>
+<li>左右两边的子集进一步分别进行以上两步，直到所有子集数组中只有一个数字为止。  </li>
+</ul>
+<p>上例中为方便起见选取了数据的中间值为基准，下图为网上下载图片，可见到基准值从左到右依次选择，个人还是觉得选择中间值更具有普遍意义，更易理解。</p>
+<h1 id="图解："><a href="#图解：" class="headerlink" title="图解："></a>图解：</h1><div style="display:inline-block;"><img src="/images/quicksort.gif" alt="myBlog"></div>
+]]></content>
+        
+        <categories>
+            
+            <category> 笔试准备 </category>
+            
+            <category> 基本算法 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> 笔试 </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[Redux使用篇]]></title>
+        <url>http://zhangyan123.github.io/2017/08/02/%E7%90%86%E8%A7%A3redux%E8%A1%8C%E4%B8%BA%EF%BC%88%E4%B8%80%EF%BC%89/</url>
+        <content type="html"><![CDATA[<p>为了方便在问题中总结提升，特辟【问题与解决】类目，惟愿从哪里跌倒，就不再摔进去。</p>
+<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><ul>
+<li>reducer函数中判断分支复杂不易管理与阅读</li>
+<li>创建store时传入一个reducer意味着每一个reducer都需要一个store管理数据，后期store维护相当混乱<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1></li>
+<li>通过combineReducers将多个reducer合并成一个rootReducer，从而创建唯一的store管理众多action请求</li>
+<li>将一种类型的actionCreators（eq:用户登录状态login、logout）放在一个文件当中，导出集合</li>
+<li>将每一份actionCreators 文件对应的处理函数封装在Handlers对象里，触发action时检测action.type符合Handlers中的哪一项，便执行对应的函数体。</li>
+</ul>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>  以上解决方案在项目中得到了实践，还包括异步注入reducer等方案，为全局状态管理提供了清晰的思路，后续文章逐项具体讲解（记得带图）。</p>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> 问题及解决方案 </category>
+            
+            <category> React使用 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[闭包应用场景]]></title>
+        <url>http://zhangyan123.github.io/2017/03/10/%E9%97%AD%E5%8C%85%E5%BA%94%E7%94%A8%EF%BC%881%EF%BC%89/</url>
+        <content type="html"><![CDATA[<h1 id="JS闭包在开发实战中的应用"><a href="#JS闭包在开发实战中的应用" class="headerlink" title="JS闭包在开发实战中的应用"></a>JS闭包在开发实战中的应用</h1><p>函数内创建内部函数并将内部函数赋值给外部变量情况(没有被返回的内部函数[[Scopes]]同样指向外层函数的作用域链，单独说闭包时为因为其强大的灵活性)，外层函数执行结束后外部变量所指向的函数对象[[Scopes]]属性中包含了外部函数中执行产生的局部值。须知道函数的作用域实在创建时候确定的，this值是在运行时候才确定的。<br>都说闭包如此灵活，强大，我想知道它究竟有什么用处</p>
+<ul>
+<li>对象的构建<br>为对象设置私有变量、私有方法（在构造函数上建特权方法访问局部变量）或静态变量和方法(在原型上建公有特权方法访问构造函数上的局部变量)</li>
+<li>事件的回调函数<br>在回调函数中仍然可以访问到外层同步函数中的参数，变量或函数</li>
+<li>偏函数（柯里化）<br><code>add =  num1=&gt; num2=&gt; num1+num2;</code></li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> 闭包 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> 执行环境与作用域 </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[浅析 XMLHttPRequest API与Fetch API]]></title>
+        <url>http://zhangyan123.github.io/2016/11/01/%E6%B5%85%E6%9E%90XHR%E4%B8%8EFetch/</url>
+        <content type="html"><![CDATA[<h1 id="WHAT"><a href="#WHAT" class="headerlink" title="WHAT"></a>WHAT</h1><p>  XMLHttpRequest与Fetch是两个实现客户端与服务器之间实现数据通信的API（由浏览器提供），他们以这样的顺序排放体现了js异步通信的进化。总之，就是两个发<strong>异步请求</strong>的工具。</p>
+<ul>
+<li>我们知道Ajax的出现更新了世人对js编程本领的认知，js不再是只会弹框而惹人厌小角色，网页局部更新的实现令前端工程师振奋，哪里要变点哪里，so easy!</li>
+<li>以往我们谈及Ajax使用的API都是XMLHttpRequest，这是一个以XML开头的单词，但是传输的格式不止于XML,目前使用较多的是JSON，HTML,或纯文本。</li>
+<li>IE5，IE6没有在他们的脚本语言中定义XMLHttpRequest对象的标识符，当时IE5，IE6发布时，XMLHttpRequest标识符本身还不是一个标准。如果XMLHttpRequest标识符不存在，通过对象检测可以获得向后兼容性。微软在2006年发布的IE7时，定义了XMLHttpRequest对象标识符。</li>
+<li>随着跨浏览器JS库(例如jQuery)流行，开发者再调用XMLHttpRequest功能时不用再直接接触底层API。</li>
+<li>先来看看直接使用XHR对象发请求的示例</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line">var xmlhttp,</div><div class="line"> data=new FormData();</div><div class="line"> data.append(&apos;mail&apos;,&apos;15527216125@163.com&apos;);</div><div class="line"> data.append(&apos;password&apos;,&apos;123456&apos;)</div><div class="line"></div><div class="line">if (window.XMLHttpRequest) &#123;</div><div class="line">    xmlhttp = new XMLHttpRequest();</div><div class="line">   </div><div class="line">&#125;else if(window.ActiveXObject)&#123;</div><div class="line"> var versions=[</div><div class="line">   &apos;MSXML2.XMLHTTP.3.0&apos;,</div><div class="line">   &apos;MSXML2.XMLHTTP&apos;,</div><div class="line">   &apos;Microsoft.XMLHTTP&apos;</div><div class="line"> ];</div><div class="line"> for(var i=0;i&lt; versions.length;i++)&#123;</div><div class="line">     try&#123;</div><div class="line">       xmlhttp=new ActiveXobject(versions[i]);</div><div class="line">       break;</div><div class="line">     &#125;catch(e)&#123;&#125;</div><div class="line">   &#125;</div><div class="line"></div><div class="line">&#125;</div><div class="line"> xmlhttp.onreadystatechange = function () &#123;</div><div class="line">    if ( xmlhttp.readyState == 4 &amp;&amp; xmlhttp.status == 200 ) &#123;</div><div class="line">      console.log(JSON.parse(xmlhttp.responseText);</div><div class="line">　　　　&#125;</div><div class="line">&#125;;</div><div class="line">    xmlhttp.open(&quot;post&quot;, &apos;/login&apos; , false);    //初始化XHR对象，readystate=1</div><div class="line">    xmlhttp.send(data);    //参数用于传输data readystate=2</div><div class="line">   // xmlhttp.abort();  //停止请求，用于多次连续点击处理及时禁止回调</div><div class="line"></div><div class="line">XHR2简易写法（不含兼容性检测）</div><div class="line">var xhr = new XMLHttpRequest();</div><div class="line">xhr.open(&apos;post&apos;, &apos;/login&apos;);</div><div class="line">xhr.responseType = &apos;json&apos;;</div><div class="line"></div><div class="line">xhr.onload = function() &#123;</div><div class="line">  console.log(xhr.response);</div><div class="line">&#125;;</div><div class="line"></div><div class="line">xhr.onerror = function() &#123;</div><div class="line">  console.log(&quot;Booo&quot;);</div><div class="line">&#125;;</div><div class="line"></div><div class="line">xhr.send(data);</div></pre></td></tr></table></figure>
+<p>封装之后：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div></pre></td><td class="code"><pre><div class="line">    function request(url,message,callback())&#123;</div><div class="line">     var versions=[</div><div class="line">       &apos;MSXML2.XMLHTTP.3.0&apos;,</div><div class="line">       &apos;MSXML2.XMLHTTP&apos;,</div><div class="line">       &apos;Microsoft.XMLHTTP&apos;</div><div class="line">     ];</div><div class="line">     var xhr;</div><div class="line">     if(XHRHttpRequest)&#123;</div><div class="line">       xhr=new XMLHttpRequest();</div><div class="line">     &#125;else&#123;</div><div class="line">       for(var i=0;i&lt; versions.length;i++)&#123;</div><div class="line">         try&#123;</div><div class="line">           xhr=new ActiveXobject(versions[i]);</div><div class="line">           break;</div><div class="line">         &#125;catch(e)&#123;&#125;</div><div class="line">       &#125;</div><div class="line">     &#125;</div><div class="line">     xhr.onreadystatechange = (function(myxhr)&#123;</div><div class="line">        return function()&#123;</div><div class="line">          if(myxhr.readyState ====4 &amp;&amp; myxhr.status ===200)&#123;</div><div class="line">            callback(xhr);</div><div class="line">          &#125;</div><div class="line">        &#125;</div><div class="line">     &#125;)(xhr);</div><div class="line">     xhr.open(&apos;post&apos;,url,true);//true代表了异步请求</div><div class="line">     xhr.send(message);</div><div class="line">   &#125;</div><div class="line"></div><div class="line">jQuery：</div><div class="line"></div><div class="line">$.ajax(&#123;</div><div class="line">  url: &apos;/login&apos;,</div><div class="line">  method: &apos;post&apos;,</div><div class="line">  data:&#123;mail:&apos;15527216125@163.com&apos;,password:&apos;123456&apos;&#125;,</div><div class="line">  success:function(res)&#123;console.log(res)&#125;</div><div class="line">  </div><div class="line">&#125;);</div><div class="line">   </div><div class="line">fetch: </div><div class="line"></div><div class="line">fetch(&apos;/login&apos;,&#123;method:&apos;post&apos;,body:data&#125;)    //返回一个promise对象  返回的response对象需要使用response对象的方法转化为JSON对象或者text等类型供使用</div><div class="line">                                        .then(function(res)&#123;return res.text()&#125;)//同样返回一个promise，实现链式调用</div><div class="line">                                        .then(function(res2)&#123;console.log(res2)&#125;);</div></pre></td></tr></table></figure>
+<p>以上简单介绍了一个简单的异步请求。    </p>
+<h1 id="WHY"><a href="#WHY" class="headerlink" title="WHY"></a>WHY</h1><p>通过前面的演示我们看到发送一个异步请求有很多方式，那么为什么非要用fetch取代XHR呢？多大仇？<br>不想说起promise的，但是不讲Promise就讲不下去了。。。<br>promise的出现是为了解决<strong>回调地狱</strong><br>简化~<br>思考：假如func3执行的条件是func1和func2均执行完毕，其中func1和fun2均是异步请求，异步请求不确定什么时候结束。。。要么就定个定时器循环检测全局flag是否赋值，要么就是放进回调耦合在一起。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">(func1()&#123;   //纯纯的伪代码</div><div class="line">    $.ajax(&#123;</div><div class="line">      //...</div><div class="line">      success:function()&#123;</div><div class="line">//fun2</div><div class="line">      $.ajax(&#123;</div><div class="line">        //...</div><div class="line">        success:function()&#123;</div><div class="line">          func3;</div><div class="line">        &#125;</div><div class="line">      &#125;);</div><div class="line">      &#125;</div><div class="line">    &#125;)</div><div class="line">&#125;)();</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">fetch(...).then(fun2)</div><div class="line">          .then(fun3)//各依赖有序执行</div></pre></td></tr></table></figure>
+<h1 id="HOW"><a href="#HOW" class="headerlink" title="HOW"></a>HOW</h1><p>参考：    </p>
+<ul>
+<li><a href="http://es6.ruanyifeng.com/#docs/promise#Promise-prototype-then" target="_blank" rel="external">promise</a></li>
+<li><a href="http://es6.ruanyifeng.com/#docs/generator-async" target="_blank" rel="external">generator-async</a></li>
+<li><a href="https://jakearchibald.com/2015/thats-so-fetch/" target="_blank" rel="external">Fetch</a></li>
+</ul>
+<h1 id="问题："><a href="#问题：" class="headerlink" title="问题："></a>问题：</h1><ul>
+<li>使用标准的ES6 Promise你无法收集进入信息或中断请求。</li>
+<li>使用XMLHttpRequest你可以模拟进度（监听progress事件），也可以取消请求（使用abort()方法）。 但是，如果有必要你也可以使用Promise来包裹它。</li>
+<li>目前Chrome 42+, Opera 29+, 和Firefox 39+都支持Fetch。微软也考虑在未来的版本中支持Fetch。 讽刺的是，当IE浏览器终于微响应实现了progress事件的时候，XMLHttpRequest也走到了尽头。 目前，如果你需要支持IE的话，你需要使用一个<a href="https://github.com/github/fetch" target="_blank" rel="external">polyfill</a>库。</li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> 异步编程 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[ES6声明声明变量的六种方法]]></title>
+        <url>http://zhangyan123.github.io/2016/10/22/ES6%E5%8F%98%E9%87%8F%E5%A3%B0%E6%98%8E/</url>
+        <content type="html"><![CDATA[<h2 id="变量声明大法"><a href="#变量声明大法" class="headerlink" title="变量声明大法"></a>变量声明大法</h2><p>ES5中只有两种声明变量的方法：var命令和function命令<br>ES6中增加四种特别的声明方式：    </p>
+<ul>
+<li>let：声明的变量作用域在最近的代码块中，在作用域中不能重复声明同一个变量名，let变量不提升，先声明后使用，声明的全局变量不属于head对象；</li>
+<li>const：声明一个常量，不可重复声明同一个变量名，变量不提升，先声明后使用，声明的全局变量不属于head对象；</li>
+<li>import：</li>
+<li>class：，声明的全局变量不属于head对象。</li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> ES6 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[初识Promise]]></title>
+        <url>http://zhangyan123.github.io/2016/10/22/%E5%88%9D%E8%AF%86Promise/</url>
+        <content type="html"><![CDATA[<p>功能：Promise是处理异步的优秀方案，它不仅可以通过链式操作帮助我们拜托回调地狱，还可以在链式操作中的任何时刻捕获异常。<br>promise支持链式调用：<br><img src="/images/promisePatern.png" alt="promise"></p>
+<p>举例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">// 同步resolve</div><div class="line">var promise1 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        resolve(&quot;this is promise1 resolve&quot;);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">    &#125;,</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>var promise = 这部分可以无视，我仅仅用于代码里标记一下demo的次序。这个例子体现了最基础用法，给resolve传入一个字符串终结当前的Promise的状态，因为Promise被终结，因此该字符串会被回调给then中的(msg) =&gt; {…}函数，从而实现串联。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">// 同步reject</div><div class="line">var promise2 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        reject(&quot;this is promise2 reject&quot;);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">    &#125;,</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>和上个例子差不多，只是调用了reject，这样会回调(err) =&gt; {….}。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">// 同步catch</div><div class="line">var promise3 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        reject(&quot;this is promise3 reject catch&quot;);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">    &#125;</div><div class="line">).catch(</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>如果我没有在then()里提供reject的回调函数，那么这个reject事件会继续向后移动，直到遇到catch会被处理。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">// 异步resolve</div><div class="line">var promise4 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        var promise4_1 = new Promise(</div><div class="line">            (resolve, reject) =&gt; &#123;</div><div class="line">                console.log(&quot;promise4_1 starts&quot;);</div><div class="line">                setTimeout(</div><div class="line">                    () =&gt; &#123;</div><div class="line">                        resolve(&quot;this is promise4_1 resolve&quot;);</div><div class="line">                    &#125;,</div><div class="line">                    2000</div><div class="line">                );</div><div class="line">            &#125;</div><div class="line">        );</div><div class="line">        resolve(promise4_1);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">    &#125;,</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>这里，我故意营造了一个resolve(Promise Object)的例子（也就是promise4_1），这样的话then()会等到这个Promise Object自身的异步流程处理结束后再回调，这相当于为promise4异步流程节外生枝了promise4_1，等枝叶长成后再回到promise4主干继续向后链式处理。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div></pre></td><td class="code"><pre><div class="line">// 链式resolve</div><div class="line">var promise5 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        var promise4_1 = new Promise(</div><div class="line">            (resolve, reject) =&gt; &#123;</div><div class="line">                console.log(&quot;promise5_1 starts&quot;);</div><div class="line">                setTimeout(</div><div class="line">                    () =&gt; &#123;</div><div class="line">                        resolve(&quot;this is promise5_1 resolve&quot;);</div><div class="line">                    &#125;,</div><div class="line">                    2000</div><div class="line">                );</div><div class="line">            &#125;</div><div class="line">        );</div><div class="line">        resolve(promise4_1);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">        var promise5_2 =  new Promise(</div><div class="line">            (resolve, reject) =&gt; &#123;</div><div class="line">                console.log(&quot;promise5_2 starts&quot;);</div><div class="line">                setTimeout(</div><div class="line">                    () =&gt; &#123;</div><div class="line">                        resolve(&quot;this is promise5_2 resolve&quot;);</div><div class="line">                    &#125;,</div><div class="line">                    2000</div><div class="line">                );</div><div class="line">            &#125;</div><div class="line">        );</div><div class="line">        return promise5_2;</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">        throw new Error();</div><div class="line">    &#125;</div><div class="line">).catch(</div><div class="line">    () =&gt; &#123;</div><div class="line">        console.log(&quot;exception catched after promise5_2 resolved&quot;);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>这个例子变得再复杂一些，除了在promise5中节外生枝promise5_1异步处理2秒，在2秒后回到主干后的.then()环节，我通过return返回一个Promise对象再次节外生枝promise5_2异步执行2秒，之后再次回到主干的.then()打印出消息并且抛出了异常，最终由catch捕获。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line">// 并行+链式promise</div><div class="line">var promise6 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        var promiseArr = [];</div><div class="line">        for (var i = 0; i &lt; 5; ++i) &#123;</div><div class="line">            promiseArr.push(new Promise(</div><div class="line">                (resolve, reject) =&gt; &#123;</div><div class="line">                    console.log(`promise6_$&#123;i&#125; starts`);</div><div class="line">                    ((index) =&gt; &#123; // 闭包处理i</div><div class="line">                        setTimeout(</div><div class="line">                            () =&gt; &#123;</div><div class="line">                                console.log(`before promise6_$&#123;index&#125; resolved`);</div><div class="line">                                resolve(`this is promise6_$&#123;index&#125; resolve`);</div><div class="line">                            &#125;,</div><div class="line">                            index * 1000</div><div class="line">                        );</div><div class="line">                    &#125;)(i);</div><div class="line">                &#125;</div><div class="line">            ));</div><div class="line">        &#125;</div><div class="line">        resolve(Promise.all(promiseArr));</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msgArr) =&gt; &#123;</div><div class="line">        console.log(`promise6 all resolved $&#123;msgArr&#125;`);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>这个例子主要是体验Promise.all()，这个函数其实创建返回了一个Promise对象，内部管理与并发了多个Promise流程（节外生枝了N个树叉），它等待它们全部完成或者任意失败之后会终结自己，在外层通过resolve将Promise.all()返回的集合式Promise对象串联（托管）起来，最终进入下一个then从而可以访问N个树叉的结果集合。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line">// .then()隐式包装resolved Promise</div><div class="line">var promise7 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        var promise7_1 = new Promise(</div><div class="line">            (resolve, reject) =&gt; &#123;</div><div class="line">                console.log(&quot;promise7_1 starts&quot;);</div><div class="line">                setTimeout(</div><div class="line">                    () =&gt; &#123;</div><div class="line">                        resolve(&quot;this is promise7_1 resolve&quot;);</div><div class="line">                    &#125;,</div><div class="line">                    2000</div><div class="line">                );</div><div class="line">            &#125;</div><div class="line">        );</div><div class="line">        resolve(promise7_1);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">        return &quot;promise7 .then()隐式包装resolved Promise&quot;;</div><div class="line">    &#125;,</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (word) =&gt; &#123;</div><div class="line">        console.log(word);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>这个例子除了节外生枝外，主要关注在于第1个.then()中return了一个字符串，它实际被隐式的包装成了一个resolved状态的Promise对象返回（这是我想强调的重点），从而继续链式的调用第2个.then()的(word) =&gt; {…}回调函数。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line">// .then()显式包装resolved Promise</div><div class="line">var promise8 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        var promise8_1 = new Promise(</div><div class="line">            (resolve, reject) =&gt; &#123;</div><div class="line">                console.log(&quot;promise8_1 starts&quot;);</div><div class="line">                setTimeout(</div><div class="line">                    () =&gt; &#123;</div><div class="line">                        resolve(&quot;this is promise8_1 resolve&quot;);</div><div class="line">                    &#125;,</div><div class="line">                    2000</div><div class="line">                );</div><div class="line">            &#125;</div><div class="line">        );</div><div class="line">        resolve(promise8_1);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">        return Promise.resolve(&quot;promise8 .then()显式包装resolved Promise&quot;);</div><div class="line">    &#125;,</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (word) =&gt; &#123;</div><div class="line">        console.log(word);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>这个例子和上一个例子等价，这里体现了第1个.then()显式调用Promise.resolve返回一个Promise对象，从而第2个.then()回调(word) =&gt; {}。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line">// .then()显式包装rejected Promise</div><div class="line">var promise9 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        var promise9_1 = new Promise(</div><div class="line">            (resolve, reject) =&gt; &#123;</div><div class="line">                console.log(&quot;promise9_1 starts&quot;);</div><div class="line">                setTimeout(</div><div class="line">                    () =&gt; &#123;</div><div class="line">                        resolve(&quot;this is promise9_1 resolve&quot;);</div><div class="line">                    &#125;,</div><div class="line">                    2000</div><div class="line">                );</div><div class="line">            &#125;</div><div class="line">        );</div><div class="line">        resolve(promise9_1);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">        return Promise.reject(&quot;promise9 .then()显式包装rejected Promise&quot;);</div><div class="line">    &#125;,</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">).catch(</div><div class="line">    (word) =&gt; &#123;</div><div class="line">        console.log(word);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>这个例子和上面2个例子相反，我在第1个.then()显式的返回了一个rejected的Promise对象，这是通过Promise.reject包装字符串而成的，因此catch将被调用。</p>
+<p>通过最后3个例子，我们应该可以明确的感受到Promise围绕pending,resolved,rejected三个状态实现的异步状态驱动以及串联/并行调用的触发动机与原理。</p>
+<p>关于Promise本身的功能就了解这么多，希望后面有机会在React下多多使用，解决一些并发ajax以及串联ajax的异步需求，关键还是找到应用场景进行合理的套用，这是我认为最难的地方。</p>
+<p>另外，需要记住Promise是ES6的产物，而未来ES7提出了async/await关键字将对Promise加以利用进一步简化异步编程，它将更接近于协程的理念，更加符合人类的思考习惯，至少我是这么认为的。</p>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> ES6 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[常见pollyfills]]></title>
+        <url>http://zhangyan123.github.io/2016/10/20/%E5%B8%B8%E8%A7%81pollyfills/</url>
+        <content type="html"><![CDATA[<h2 id="常见内建对象扩展项"><a href="#常见内建对象扩展项" class="headerlink" title="常见内建对象扩展项"></a>常见内建对象扩展项</h2><blockquote>
+<p>讨论：基于相关内建原型来增加自定义方法这种技术，最常用且最能被接受的例子，是实现让老式浏览器支持新功能，而且应该是已经被ECMAScript委员会标准化了的，为现代浏览器所实现的新功能，例如让老版IE支持ES5中的方法，这种扩展叫做shims或者pollyfills.<br><strong>注：</strong>使用自定义方法扩展内建对象原型时，一定要检查该方法是否已经存在，不存在情况下才扩展此方法。<br>下面罗列几个常见pollyfills：    </p>
+<ul>
+<li>trim()<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">if(typeof String.prototype.trim !==&apos;function&apos;)&#123;</div><div class="line">  String.prototype.trim = function()&#123;</div><div class="line">    return this.replace(/^\s+|\s+$/g,&apos;&apos;);</div><div class="line">  &#125;;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+</blockquote>
+<ul>
+<li><p>create()</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">if(typeof Object.create !== &apos;function&apos;)&#123;</div><div class="line">  Object.create = function(o)&#123;</div><div class="line">    var F =function()&#123;&#125;;</div><div class="line">      F.prototype=o;</div><div class="line">      return new F（）;</div><div class="line">    </div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>isArray()<br>if(typeof Array.isArray !== ‘function’){<br>Array.isArray = function(o){<br> if(Object.prototype.toString.call(o)=== “[object Array]”){<br>   return true;<br> }else{<br>   return false;<br> }<br>}<br>}</p>
+</li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> 内建对象的扩展 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[初识Redux]]></title>
+        <url>http://zhangyan123.github.io/2016/10/20/%E5%88%9D%E8%AF%86Redux/</url>
+        <content type="html"><![CDATA[<h1 id="为什么要react-redux"><a href="#为什么要react-redux" class="headerlink" title="为什么要react-redux?"></a>为什么要react-redux?</h1><p>理解使用action创建函数封装逻辑是react与redux配合的最佳实践，当所有的逻辑处理都被转移到redux中时，react就可以只负责渲染界面并发起action创建函数了。</p>
+<h2 id="Action"><a href="#Action" class="headerlink" title="Action"></a>Action</h2><p><code>Action</code>是JS一个普通的对象<code>{type: ‘type类型’}</code>其中type属性的值必须为一个字符串（用于描述将要执行的动作）；    </p>
+<h2 id="Reducer"><a href="#Reducer" class="headerlink" title="Reducer"></a>Reducer</h2><p><code>Reducer</code>是一个纯函数，形式为（state,action）=&gt;state,它的作用在于根据当前state和处理器action计算出下一个state并返回（等同于更新state）</p>
+<ul>
+<li>纯函数<br>与外界的通信渠道“一进一出”只有参数一个入口，只有return一个出口，内部计算不可造成外部变量变化，更不能直接修改参数（尤其不能去改state），不能在内部调用API或路由跳转。</li>
+<li>纯函数<br>简单理解，它只负责对参数按照指定方式计算并返回计算结果，不做任何复杂的功能性处理。<h2 id="Store"><a href="#Store" class="headerlink" title="Store"></a>Store</h2><code>Store</code>负责更新、查询、订阅state等多个工作，Store是全局唯一的，它将action、reducer、state等联系在了一起。</li>
+<li>生成store需要redux中的createStore方法：<code>import { createStore } from ‘redux’</code>,let store=createStore(reducer);</li>
+<li>提供getState()获取当前state值</li>
+<li>提供dispatch(action)发起action更新state</li>
+<li>提供subscribe(listener)订阅执行reducer之后的回调函数<h2 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h2>普通发起action的过程可以视为：根据实际条件判断action.type-&gt;生成对应action对象-&gt;发起action store.dispatch(action)。<br>我们知道react灵活之处在于通过更新state方便得更新页面元素，这样的更新过程未免过于繁琐，最好可以使用一个函数执行全部操作（从判断逻辑到发起指令）。</li>
+</ul>
+<h2 id="使用Redux-Thunk优化Action创建函数"><a href="#使用Redux-Thunk优化Action创建函数" class="headerlink" title="使用Redux Thunk优化Action创建函数"></a>使用Redux Thunk优化Action创建函数</h2><ul>
+<li>Redux Thunk中间件可以让action创建函数先不反回action对象，而是返回一个函数（这个函数接受store的两个方法dispatch和getState），通过这个函数延迟dispatch或者在满足指定条件的情况下dispatch。</li>
+<li>激活Redux Thunk中间件，只需要在createStore中加入applyMiddleware(thunk)；</li>
+</ul>
+<h2 id="优雅建立React与Redux之间的桥梁"><a href="#优雅建立React与Redux之间的桥梁" class="headerlink" title="优雅建立React与Redux之间的桥梁"></a>优雅建立React与Redux之间的桥梁</h2><p>react-redux是链接组件与状态的第三方库，它不仅可以给组件树中任意一组件绑定state和方法，还进行了性能优化，避免了不必要的重新渲染。    </p>
+<p>最佳实践：</p>
+<ul>
+<li>所有组件的顶层使用Provider组件给整个程序提供store；</li>
+<li>使用connect()将state和action创建函数绑定到组件当中。<br>一个connect()用例： <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">export default connect (</div><div class="line">  state =&gt; (&#123;counter: state.counter&#125;),//第一个参数是一个函数，将state中的counter传递给组件的counter属性</div><div class="line">  dispatch =&gt;bindActionCreators(ActionCreators.dispatch)//第二个参数用意是将action创建函数绑定到组件的props中</div><div class="line">)(Counter);</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="Provider和connect的工作原理"><a href="#Provider和connect的工作原理" class="headerlink" title="Provider和connect的工作原理"></a>Provider和connect的工作原理</h2><ul>
+<li>使用connect传递数据目的是实现跨级传递，操作上只需要两步：①顶层组件声明childContextTypes(如果不声明则无法使用getChildContext()),将需要传递的数据通过顶层组件中的getChildContext(){return data：this.data}放进context中；②需要使用context的子组件中声明contextTypes(如果声明则context对象为空)就可以直接通过context对象获取对应的属性值了。</li>
+<li>Provider只是一个使用context传递数据的react组件，它负责给程序 提供store，而connect()则负责生成新的名为Connect的组件，Connect组件在context中拿到store中获取的state和dispatch,最后讲state和经过dispatch加工的action创建函数连接到组件上。</li>
+<li>高阶组件（higher-order-Components）是一个函数，它接受React组件作为参数，并返回一个新的React组件。</li>
+<li>connect是一个嵌套函数，运行connect（）后生成一个高阶组件，接受需要绑定state及经过dispatch处理的action创建函数的组件，生成绑定好的同名组件。</li>
+<li>connect性能优化：我们知道state发生变化时组件会重新渲染，可以优化的地方在于哪里变化哪里repaint,一个页面中使用多个connect为不同的组件绑定不同的state中数据，则可以将组件之间隔离开，不会“一改全改”。</li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> 框架 </category>
+            
+            <category> React </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[策略模式在前端开发中的应用]]></title>
+        <url>http://zhangyan123.github.io/2016/10/18/%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/</url>
+        <content type="html"><![CDATA[<p>待更新。。。</p>
+]]></content>
+        
+        <categories>
+            
+            <category> 设计模式 </category>
+            
+            <category> 策略模式 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[React状态(state)]]></title>
+        <url>http://zhangyan123.github.io/2016/10/17/React%E7%8A%B6%E6%80%81/</url>
+        <content type="html"><![CDATA[<h2 id="State-工作原理"><a href="#State-工作原理" class="headerlink" title="State 工作原理"></a>State 工作原理</h2><p>React.js是把UI当状态的函数,通知React数据变化的方法时调用setState(data,callback)。这个方法会合并data到this.state,<br>并重新渲染组件。渲染完成后,调用可选的callback回调。大部分情况下不需要提供callback,因为只要组件的状态改变了,React 调用<br>可选的callback回调。大部分情况下不需要提供callback,因为只要组件的状态改变了,React调用render()负责把界面更新到最新状态。</p>
+<h2 id="getInitialState"><a href="#getInitialState" class="headerlink" title="getInitialState"></a>getInitialState</h2><p>getInitialState()在整个组件的生命周期中只会执行一次,用来设置组件的初始state,也就是一个对象,这个对象可以通过this.state属性读取。当用户<br>点击组件,导致状态变化,this.setState方法就修改状态值,自动调用this.render方法,再次渲染组件。</p>
+<h2 id="replaceState"><a href="#replaceState" class="headerlink" title="replaceState()"></a>replaceState()</h2><p>replaceState()与setState()的区别在于它会用第一个参数去替代原状态而非进行合并。</p>
+<h2 id="哪些组件应该有State"><a href="#哪些组件应该有State" class="headerlink" title="哪些组件应该有State"></a>哪些组件应该有State</h2><p>大部分组件的工作应该是从props里取数据并渲染出来,但是有时需要对用户输入、服务器请求或者时间变化等做出响应,这时有需要对用户输入、服务器请求<br>或者时间变化等做出响应,这时才需要使用State。<br>尝试把尽可能多的组件无状态化,这样做可以可以隔离state,把它放在最合理的地方,也能减少冗余,同时易于解释程序运作过程。<br>常用的模式时创建多个只负责渲染数据的无状态组件,在它们的上层创建一个有状态组件并把它的状态通过props传给子级,这个有状态的组件封装了所有用户<br>的交互逻辑,而这些无状态组件则负责声明式的渲染数据。</p>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> 框架 </category>
+            
+            <category> React </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[观察者模式在前端开发中的应用]]></title>
+        <url>http://zhangyan123.github.io/2016/10/16/%E8%A7%82%E5%AF%9F%E8%80%85%E6%A8%A1%E5%BC%8F/</url>
+        <content type="html"><![CDATA[<h1 id="前端开发中观察者模式实践"><a href="#前端开发中观察者模式实践" class="headerlink" title="前端开发中观察者模式实践"></a>前端开发中观察者模式实践</h1><p>观察者模式又叫发布订阅模式（Publsih/Subscrbe）,它使得方法之间传递信息变得更加通畅，减少耦合性解耦，减少了状态判断。<br>功能：发布者有一个publish方法，将其参数传递给所有订阅者需要该状态作为参数的方法。为了使观察者模式在代码中更容易实现，我们还可以尝试来写一个将普对象改造为发布者的方法，但一定记得在发布者对象那个中调用<code>publish(message)</code></p>
+<blockquote>
+<p>观察者的使用场合就是：当一个对象的改变需要同时改变其它对象，并且它不知道具体有多少对象需要改变的时候，就应该考虑使用观察者模式。</p>
+</blockquote>
+<p> 总的来说，观察者模式所做的工作就是在解耦，让耦合的双方都依赖于抽象，而不是依赖于具体。从而使得各自的变化都不会影响到另一边的变化。</p>
+<p> 解析：观察者对象其实是一个混合类，它负责将观察到的状态变化同时通知给关注这一变化的对象<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line"> //通用代码</div><div class="line">var observer = &#123;</div><div class="line">    //订阅</div><div class="line">    addSubscriber: function (callback) &#123;</div><div class="line">        this.subscribers[this.subscribers.length] = callback;</div><div class="line">    &#125;,</div><div class="line">    //退订</div><div class="line">    removeSubscriber: function (callback) &#123;</div><div class="line">        for (var i = 0; i &lt; this.subscribers.length; i++) &#123;</div><div class="line">            if (this.subscribers[i] === callback) &#123;</div><div class="line">                delete (this.subscribers[i]);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;,</div><div class="line">    //发布</div><div class="line">    publish: function (what) &#123;</div><div class="line">        for (var i = 0; i &lt; this.subscribers.length; i++) &#123;</div><div class="line">            if (typeof this.subscribers[i] === &apos;function&apos;) &#123;</div><div class="line">                this.subscribers[i](what);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;,</div><div class="line">    // 将对象o具有观察者功能</div><div class="line">    make: function (o) &#123; </div><div class="line">        for (var i in this) &#123;</div><div class="line">            o[i] = this[i];</div><div class="line">            o.subscribers = [];</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;;</div></pre></td></tr></table></figure></p>
+<p>根据jQuery1.7版新增的on/off功能，我们也可以定义jQuery版的观察者：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">(function ($) &#123;</div><div class="line"></div><div class="line">    var o = $(&#123;&#125;);</div><div class="line"></div><div class="line">    $.subscribe = function () &#123;</div><div class="line">        o.on.apply(o, arguments);</div><div class="line">    &#125;;</div><div class="line"></div><div class="line">    $.unsubscribe = function () &#123;</div><div class="line">        o.off.apply(o, arguments);</div><div class="line">    &#125;;</div><div class="line"></div><div class="line">    $.publish = function () &#123;</div><div class="line">        o.trigger.apply(o, arguments);</div><div class="line">    &#125;;</div><div class="line"></div><div class="line">&#125; (jQuery));</div></pre></td></tr></table></figure></p>
+]]></content>
+        
+        <categories>
+            
+            <category> 设计模式 </category>
+            
+            <category> 观察者模式 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[React创新语法JSX]]></title>
+        <url>http://zhangyan123.github.io/2016/10/16/React%E6%B6%89%E5%8F%8A%E7%9A%84%E6%A6%82%E5%BF%B5/</url>
+        <content type="html"><![CDATA[<h1 id="解决什么问题"><a href="#解决什么问题" class="headerlink" title="解决什么问题"></a>解决什么问题</h1><p> 生来为了解决在开发中数据随时间变化的复杂用户界面，优化状态替换机制</p>
+<h1 id="主张"><a href="#主张" class="headerlink" title="主张"></a>主张</h1><p> 一次学习，随处可用</p>
+<h1 id="编写react组件"><a href="#编写react组件" class="headerlink" title="编写react组件"></a>编写react组件</h1><p> 编写react组件通常需要写一个继承自React.Component的类，并在render()中返回你要展示的视图<br> 但，如果这个组件只有一个render()方法，可以将其改为更为简洁的无状态函数，这也是<a href="https://github.com/libertyAlone/airbnb-javascript-style-guide-cn" target="_blank" rel="external">Airbnb编码规范</a>推荐的。</p>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> 框架 </category>
+            
+            <category> React </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[正则表达式是提高效率的利器（一）]]></title>
+        <url>http://zhangyan123.github.io/2016/10/14/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%EF%BC%881%EF%BC%89/</url>
+        <content type="html"><![CDATA[<h1 id="RegExp"><a href="#RegExp" class="headerlink" title="RegExp"></a>RegExp</h1><p>对于正则表达式，不同的语言有着不同的实现（每种语言的正则表达式互相之间的关系类似方言，同理不同表达），js采用的是Perl5的语法。</p>
+<ul>
+<li>构造正则对象的方式：<ul>
+<li>优选字面量方式：<code>var re = /^j.*t$/gim</code>     </li>
+<li>构造器方式：<code>var re = RegExp(‘^j.*t$’,’gim’)</code></li>
+</ul>
+</li>
+<li>正则对象的属性：<ul>
+<li>global 全局检测，默认false;</li>
+<li>ignoreCase  忽略大小写，默认false;</li>
+<li>multiline 跨行搜索，默认false;</li>
+<li>lastIndex 搜索开始位置索引值，默认0;</li>
+<li>source 存储了正则对象的pattern<br>以上属性均在对象创建时设置，使用对象过程中不可修改（除了lastIndex）.</li>
+</ul>
+</li>
+<li><p>应用正则对象的方法:</p>
+<ul>
+<li>test() 返回布尔值，被测字符串符合模式true</li>
+<li>exec() 返回匹配到字符串组成的数据<br>以上为正则对象自带方法，下面总结字符串对象中应用正则对象的场景     </li>
+<li>match() 返回匹配内容的数组</li>
+<li>search() 返回第一个匹配内容所在的位置索引值</li>
+<li><p>replace() 将匹配的文本替换为指定的字符串</p>
+<ol>
+<li><p>回调式替换     </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">s.replace(&quot;/(.*)@(.*)\.(.*)/g&quot;,callback);</div><div class="line">  function callback(匹配到的内容(例子函数体内使用match表示)，模式分组匹配到的字符串组，匹配内容所在位置索引值，被搜索的字符串)&#123;</div><div class="line">    return &quot;_&quot;+match;</div><div class="line">  &#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>(pattern)当匹配模式被放在括号中时，标明该匹配模式的匹配串是可获取的，这种模式成为捕获模式，使用<code>$1…$9</code>等参数来指代<br>(?:pattern)相对与捕获模式可以理解这种非捕获模式，捕获过程中直接跳过这些模式，eg:    </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&quot;regular expression&quot;.replace(&apos;/(?:r)(e)/g&apos;,&apos;$1$1&apos;);</div><div class="line">//&quot;eegular expeession&quot;匹配到了所有的‘re’并用ee替换,可见r没有被捕获进$1</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<div style="display:inline-block;"><img src="/images/replace.png" alt="myBlog"></div></li>
+<li>split() 以模式匹配的内容为分隔点，将字符串分割为数组</li>
+</ul>
+</li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 正则表达式 </category>
+            
+            <category> 方法 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[React创新语法JSX]]></title>
+        <url>http://zhangyan123.github.io/2016/10/14/React%E8%AF%AD%E6%B3%95Jsx/</url>
+        <content type="html"><![CDATA[<ul>
+<li><h2 id="类似HTML"><a href="#类似HTML" class="headerlink" title="类似HTML"></a>类似HTML</h2>HTML标签可以相互嵌套,支持大部分符合HTML规范的属性,支持以<code>data-</code>为前缀的自定义属性(自定义属性不加此前缀时React不予显示);</li>
+<li><h2 id="javaScript表达式"><a href="#javaScript表达式" class="headerlink" title="javaScript表达式"></a>javaScript表达式</h2>JSX允许在闭合标签中使用JS表达式,但要被{}所包裹,js表达式必须有返回值,因此不能再{}中直接使用if-else语句,但可以使用||和&amp;&amp;这样的比较运算符,<br>如果确实要使用if-else语句,可以将其写在函数中,然后在{}中调用;</li>
+<li><h2 id="样式"><a href="#样式" class="headerlink" title="样式"></a>样式</h2><p>JSX内联样式也是用style属性定义的,但属性值是- 样式对象 -而非字符串,并且样式对象中的属性名需要使用驼峰命名法;<br>eg:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">function demo()&#123;</div><div class="line">    return(</div><div class="line">        &lt;li&gt;</div><div class="line">            &lt;h3&gt;样式&lt;/h3&gt;</div><div class="line">            &lt;p style=&#123;&#123; color: &apos;red&apos;,fontSize:&apos;14px&apos;&#125;&#125;&gt;内联样式不是字符串,而是对象&lt;/p&gt;</div><div class="line">        &lt;/li&gt;</div><div class="line">    );</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><h2 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h2><p>JSX中注释内容写法与html相同,但要包裹在{}中;<br>eg:{/<em>这里是注释内容</em>/}</p>
+</li>
+<li><h2 id="数组"><a href="#数组" class="headerlink" title="数组"></a>数组</h2>JSX中的数组会自动展开,但是每一项的key属性值必须不同。</li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> 框架 </category>
+            
+            <category> React </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[ES5新增常用特性]]></title>
+        <url>http://zhangyan123.github.io/2016/10/12/ES5%E6%96%B0%E5%A2%9E%E5%B8%B8%E7%94%A8%E7%89%B9%E6%80%A7/</url>
+        <content type="html"><![CDATA[<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>ECMAScript 5.1 (或仅 ES5) 是ECMAScript(基于JavaScript的规范)标准最新修正。 与HTML5规范进程本质类似，ES5通过对现有JavaScript方法添加语句和原生ECMAScript对象做合并实现标准化。ES5还引入了一个语法的严格变种，被称为”严格模式(strict mode)”。</p>
+<p>本文介绍一些有用的改变和添加。</p>
+<h2 id="浏览器支持"><a href="#浏览器支持" class="headerlink" title="浏览器支持"></a>浏览器支持</h2><p>随着Opera 11.60的发布, 所有5大浏览器都支持ES5, 除了一些实现的bugs. 除非另有说明，本文中提到的的一切可以用在以下浏览器版本（或更高）：</p>
+<ul>
+<li>Opera 11.60</li>
+<li>Internet Explorer 9*</li>
+<li>Firefox 4</li>
+<li>Safari 5.1**</li>
+<li>Chrome 13</li>
+<li>IE9不支持严格模式 — IE10 添加</li>
+<li>Safari 5.1 仍不支持 Function.prototype.bind, 尽管 Function.prototype.bind现在已经被Webkit所支持。</li>
+</ul>
+<h2 id="ES5的严格模式"><a href="#ES5的严格模式" class="headerlink" title="ES5的严格模式"></a>ES5的严格模式</h2><p>严格模式给作者提供了选择一个限制性更强语言变种的方式——给作者提供额外的可靠性给用户提供额外的安全性。在JS文件或是函数的顶部添加”use strict”即可启用严格模式。因为”use strict”就是个字符串，因此其会被旧版浏览器安全地忽视。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">&quot;use strict&quot;;</div><div class="line">function strict()&#123;</div><div class="line">  &quot;use strict&quot;;</div><div class="line">  //...</div><div class="line">&#125;</div><div class="line"></div><div class="line">function sloppy()&#123;</div><div class="line">  eval(&quot;window.foo = &apos;bar&apos;&quot;);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>在严格模式下运行脚本，不少导致提醒或buggy行为的事情会抛出错误，例如：</p>
+<p>未声明的变量赋值抛出一个ReferenceError, 而不是创建一个全局变量。<br>不止一次对对象字面量分配相同的属性会抛出SyntaxError.<br>使用with语句抛出SyntaxError.<br>MDSN的严格模式文章有个关于所有这些差异很有用的总结表格。</p>
+<h2 id="新增JSON"><a href="#新增JSON" class="headerlink" title="新增JSON"></a>新增JSON</h2><p>ES5提供一个全局的JSON对象，用来序列化(JSON.stringify)和反序列化(JSON.parse)对象为JSON格式。</p>
+<p>对于老的浏览器，可以考虑使用Douglas Crockford的json2.js, 可以让旧的浏览器实现同样的功能（原始支持功能测试后）。</p>
+<p>JSON.parse(text [, reviver])</p>
+<p>JSON.parse接受文本(JSON格式)并转换成一个ECMAScript值。该可选的reviver参数是有带有key和value两个参数的函数，其作用于结果——让过滤和转换返回值成为可能。</p>
+<figure class="highlight plain"><figcaption><span>result = JSON.parse('&#123;"a": 1, "b": "2"&#125;');</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">//Object</div><div class="line"> result.b</div><div class="line">//&quot;2&quot;</div></pre></td></tr></table></figure>
+<p>如果我们想确保解析的值是个整数，我们可以使用reviver方法。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">var result = JSON.parse(&apos;&#123;&quot;a&quot;: 1, &quot;b&quot;: &quot;2&quot;&#125;&apos;, function(key, value)&#123;</div><div class="line">  if (typeof value == &apos;string&apos;)&#123;</div><div class="line">    return parseInt(value);</div><div class="line">  &#125; else &#123;</div><div class="line">    return value; </div><div class="line">  &#125;</div><div class="line">&#125;)</div><div class="line"></div><div class="line">&gt;&gt; result.b</div><div class="line">2</div><div class="line">JSON.stringify(value [, replacer [, space]])</div></pre></td></tr></table></figure></p>
+<p>JSON.stringify允许作者接受一个ECMAScript值然后转换成JSON格式的字符串。 在其最简单的形式中，JSON.stringify接受一个值返回一个字符串，<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"> var mike = JSON.stringify(&#123;mike: &quot;taylor&quot;&#125;)</div><div class="line">//undefined</div><div class="line"></div><div class="line">mike</div><div class="line">//&apos;&#123;&quot;mike&quot;: &quot;taylor&quot;&#125;&apos;</div><div class="line"></div><div class="line">typeof mike</div><div class="line">//&quot;string&quot;</div></pre></td></tr></table></figure></p>
+<p>如果我们需要改变值字符串化的方式，或是对我们选择的提供过滤，我们可以将其传给replacer函数。例如，我们想过滤出即将被字符串化的对象中值为13的属性：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">var nums = &#123;</div><div class="line">  &quot;first&quot;: 7,</div><div class="line">  &quot;second&quot;: 14,</div><div class="line">  &quot;third&quot;: 13</div><div class="line">&#125;</div><div class="line"></div><div class="line">var luckyNums = JSON.stringify(nums, function(key, value)&#123;</div><div class="line">  if (value == 13) &#123;</div><div class="line">    return undefined;</div><div class="line">  &#125; else &#123;</div><div class="line">    return value;</div><div class="line">  &#125;</div><div class="line">&#125;);</div><div class="line"></div><div class="line">&gt;&gt; luckyNums</div><div class="line">&apos;&#123;&quot;first&quot;: 7, &quot;second&quot;: 14&#125;&apos;</div></pre></td></tr></table></figure></p>
+<p>如果replacer方法返回undefined, 则键值对就不会包含在最终的JSON中。我们同样可以传递一个space参数以便获得返回结果的可读性帮助。space参数可以是个数字，表明了作缩进的JSON字符串或字符串每个水平上缩进的空格数。如果参数是个超过10的数值，或是超过10个字符的字符串，将导致取数值10或是截取前10个字符。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">var luckyNums = JSON.stringify(nums, function(key, value) &#123;</div><div class="line">  if (value == 13) &#123;</div><div class="line">    return undefined;</div><div class="line">  &#125; else &#123;</div><div class="line">    return value;</div><div class="line">  &#125;</div><div class="line">&#125;, 2);</div><div class="line"></div><div class="line">&gt;&gt; luckyNums</div><div class="line">&apos;&#123;</div><div class="line">  &quot;first&quot;:7,</div><div class="line">  &quot;second&quot;:14</div><div class="line">&#125;&apos;</div></pre></td></tr></table></figure></p>
+<h2 id="对象新增方法"><a href="#对象新增方法" class="headerlink" title="对象新增方法"></a>对象新增方法</h2><p>下面的方法是添加到Object上的构造器：</p>
+<p>Object.getPrototypeOf<br>Object.getOwnPropertyDescriptor<br>Object.getOwnPropertyNames<br>Object.create<br>Object.defineProperty(定义属性描述)</p>
+<ul>
+<li>在ES3中，除了一些内置属性（例如Math.PI），对象的属性是可以在任何时候都进行增删改查的，在ES5中，这种原本内建属性才有的特权被普适话，ES5引入属性描述符的概念，我们可以通过它对定义的属性有更大的控制权。属性描述符是每个属性都具备的一个描述对象，是对象就可以有属性和方法，但属性描述符对象的成员是确定的，为避免歧义，我们可以叫这些成员为特性；</li>
+<li>了解下属性描述符中的特性：<ul>
+<li>value 存放属性值</li>
+<li>writable  是否可写</li>
+<li>enumberable 是否可枚举</li>
+<li>configurable 是否可删除</li>
+<li>set() 更新属性时调用</li>
+<li>get() 获取属性时调用</li>
+</ul>
+</li>
+<li><p>举例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">var person=&#123;&#125;;</div><div class="line">person.leds=2;</div></pre></td></tr></table></figure>
+<p>以上ES3风格的代码等价为     </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">var person=&#123;&#125;;</div><div class="line">Object.defineProperty(person,&quot;legs&quot;,&#123;</div><div class="line">  value:2,</div><div class="line">  writable:true,</div><div class="line">  configurable:true,</div><div class="line">  enumrable:true</div><div class="line"></div><div class="line">&#125;);如上所示，除了value默认为undefined其他特性均默认为false,这意味着，通过这种方式定义属性时需显示设定他们值为true。</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>Object.defineProperties<br>Object.seal<br>Object.freeze<br>Object.preventExtensions<br>Object.isSealed<br>Object.isFrozen<br>Object.isExtensible<br>Object.keys<br>这些新增的好处之一是对象的属性有了更多控制，例如哪些是允许被修改的，哪些是可以枚举的，哪些是可以删除的等。这个的实现通过程序访问对象的属性描述符(property descriptors). 例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">var cat = &#123;&#125;;</div><div class="line"></div><div class="line">Object.defineProperty(cat, &quot;name&quot;, &#123;</div><div class="line">  value: &quot;Maru&quot;,</div><div class="line">  writable: false,</div><div class="line">  enumerable: true,</div><div class="line">  configurable: false</div><div class="line">&#125;);</div><div class="line"></div><div class="line">Object.defineProperty(cat, &quot;skill&quot;, &#123;</div><div class="line">  value: &quot;exploring boxes&quot;,</div><div class="line">  writable: true,</div><div class="line">  enumerable: true,</div><div class="line">  configurable: true</div><div class="line">&#125;);</div></pre></td></tr></table></figure></p>
+<p>对于我们的cat对象, 其名字name不能被改变，但是会出现在for-in循环中。在其他方面，Maru擅长探索盒子(exploring boxes), 但是可以在将来改变，因为skill属性是writable和configurable的。</p>
+<p>在之后的文章我们将详细探讨所有附加的对象。</p>
+<h2 id="数组新增方法"><a href="#数组新增方法" class="headerlink" title="数组新增方法"></a>数组新增方法</h2><p>以下方法添加到了Arrayprototype对象上:<br>Array.prototype.indexOf<br>Array.prototype.lastIndexOf<br>Array.prototype.every<br>Array.prototype.some<br>Array.prototype.forEach<br>Array.prototype.map<br>Array.prototype.filter<br>Array.prototype.reduce<br>Array.prototype.reduceRight<br>关于ES5数组”extras” Dmitry Soshnikov写过一篇有深度的参考文章。</p>
+<p>Dmitry的文章中有一个没有提到，就是Array.isArray, 正如你看到的，这厮直接写在了Array构造器上，而不是prototype对象上。Array.isArray会按照你所期待的那样去做 — 这是一个根据参数的[[Class]]内部属性是否是”Array”返回true或false.<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">Array.isArray(&quot;NO U&quot;)</div><div class="line">&gt;&gt; false</div><div class="line"></div><div class="line">Array.isArray([&quot;NO&quot;, &quot;U&quot;])</div><div class="line">&gt;&gt; true</div></pre></td></tr></table></figure></p>
+<p>在ES3中，唯一可靠的确定一个值是数组的方式就是使用“the Miller Device”, 即比对一个数组其内在的[[Class]]属性。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">Object.prototype.toString.apply(value) === &apos;[object Array]&apos;</div><div class="line">Function.prototype.bind(thisArg [, arg1 [, arg2, …]])</div><div class="line">Function.prototype.bind返回一个新的函数对象，该函数对象的this绑定到了thisArg参数上。从本质上讲，这允许你在其他对象链中执行一个函数。</div><div class="line"></div><div class="line">function locate()&#123;</div><div class="line">  console.log(this.location);</div><div class="line">&#125;</div><div class="line"></div><div class="line">function Maru(location)&#123;</div><div class="line">  this.location = location;</div><div class="line">&#125;</div><div class="line"></div><div class="line">var kitty = new Maru(&quot;cardboard box&quot;);</div><div class="line"></div><div class="line">var locateMaru = locate.bind(kitty);</div><div class="line"></div><div class="line">locateMaru();</div></pre></td></tr></table></figure></p>
+<p>在这个例子中，我们将Maru对象的上下文应用在location函数中。因为location是个全局对象的属性，其this值就是全局对象(window)。在这种情况下，我们向上寻找cat, 并不是Location对象，因为我们可以通过绑定的总是kitty的this值创建一个新方法locateMaru.</p>
+<h2 id="补充参考"><a href="#补充参考" class="headerlink" title="补充参考"></a>补充参考</h2><p>ECMAScript 5 对象和属性 by John Resig<br>理解JavaScript函数调用和”this” by Yehuda Katz<br>JavaScript严格模式 by Angus Croll<br>ECMA-262-5详细 介绍 by Dmitry Soshnikov<br>ECMAScript 5 兼容性表 by Juriy Zaytsev<br>本文许可自Creative Commons Attribution 3.0 Unported许可。</p>
+<p>本文转载自张鑫旭-鑫空间-鑫生活<a href="http://www.zhangxinxu.com/wordpress/?p=2148" target="_blank" rel="external">http://www.zhangxinxu.com</a></p>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> JS进步史 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[啃掉IE低版本这块硬骨头（二）]]></title>
+        <url>http://zhangyan123.github.io/2016/10/11/JS%E6%B5%8F%E8%A7%88%E5%99%A8%E5%85%BC%E5%AE%B9%E5%A4%84%E7%90%86(2)/</url>
+        <content type="html"><![CDATA[<h1 id="JS浏览器兼容性处理"><a href="#JS浏览器兼容性处理" class="headerlink" title="JS浏览器兼容性处理"></a>JS浏览器兼容性处理</h1><p>一、document.formName.item(”itemName”) 问题 </p>
+<p>问题说明：IE下，可以使用 document.formName.item(”itemName”) 或 document.formName.elements [“elementName”]；Firefox 下，只能使用document.formName.elements[“elementName”]。<br>解决方法：统一使用document.formName.elements[“elementName”]。 </p>
+<p>二、集合类对象问题 </p>
+<p>问题说明：IE下，可以使用 () 或 [] 获取集合类对象；Firefox下，只能使用 [ ]获取集合类对象。<br>解决方法：统一使用 [] 获取集合类对象。 </p>
+<p>三、自定义属性问题 </p>
+<p>问题说明：IE下，可以使用获取常规属性的方法来获取自定义属性，也可以使用 getAttribute() 获取自定义属性；Firefox下，只能使用 getAttribute() 获取自定义属性。<br>解决方法：统一通过 getAttribute() 获取自定义属性。 </p>
+<p>四、eval(”idName”)问题 </p>
+<p>问题说明：IE下，可以使用 eval(”idName”) 或 getElementById(”idName”) 来取得 id 为 idName 的HTML对象；Firefox下，只能使用 getElementById(”idName”) 来取得 id 为 idName 的HTML对象。<br>解决方法：统一用 getElementById(”idName”) 来取得 id 为 idName 的HTML对象。 </p>
+<p>五、变量名与某HTML对象ID相同的问题 </p>
+<p>问题说明：IE下，HTML对象的ID可以作为 document 的下属对象变量名直接使用，Firefox下则不能；Firefox下，可以使用与HTML对象ID相同的变量名，IE下则不能。<br>解决方法：使用 document.getElementById(”idName”) 代替 document.idName。最好不要取HTML对象ID相同的变量名，以减少错误；在声明变量时，一律加上var关键字，以避免歧义。 </p>
+<p>六、const问题 </p>
+<p>问题说明：Firefox下，可以使用const关键字或var关键字来定义常量；IE下，只能使用var关键字来定义常量。<br>解决方法：统一使用var关键字来定义常量。 </p>
+<p>七、input.type属性问题 </p>
+<p>问题说明：IE下 input.type 属性为只读；但是Firefox下 input.type 属性为读写。<br>解决办法：不修改 input.type 属性。如果必须要修改，可以先隐藏原来的input，然后在同样的位置再插入一个新的input元素。 </p>
+<p>八、window.event问题 </p>
+<p>问题说明：window.event 只能在IE下运行，而不能在Firefox下运行，这是因为Firefox的event只能在事件发生的现场使用。<br>解决方法：在事件发生的函数上加上event参数，在函数体内(假设形参为evt)使用 var myEvent = evt?evt:(window.event?window.event:null)<br>示例： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">&lt;input type=&quot;button&quot; onclick=&quot;doSomething(event)&quot;/&gt; </div><div class="line">&lt;script language=&quot;javascript&quot;&gt; </div><div class="line">function doSomething(evt) &#123; </div><div class="line">var myEvent = evt?evt:(window.event?window.event:null) </div><div class="line">... </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>九、event.x与event.y问题 </p>
+<p>问题说明：IE下，even对象有x、y属性，但是没有pageX、pageY属性；Firefox下，even对象有pageX、pageY属性，但是没有x、y属性。<br>解决方法：var myX = event.x ? event.x : event.pageX; var myY = event.y ? event.y:event.pageY;<br>如果考虑第8条问题，就改用myEvent代替event即可。 </p>
+<p>十、event.srcElement问题 </p>
+<p>问题说明：IE下，even对象有srcElement属性，但是没有target属性；Firefox下，even对象有target属性，但是没有srcElement属性。<br>解决方法：使用srcObj = event.srcElement ? event.srcElement : event.target;<br>如果考虑第8条问题，就改用myEvent代替event即可。 </p>
+<p>十一、window.location.href问题 </p>
+<p>问题说明：IE或者Firefox2.0.x下，可以使用window.location或window.location.href；Firefox1.5.x下，只能使用window.location。<br>解决方法：使用 window.location 来代替 window.location.href。当然也可以考虑使用 location.replace()方法。 </p>
+<p>十二、模态和非模态窗口问题 </p>
+<p>问题说明：IE下，可以通过showModalDialog和showModelessDialog打开模态和非模态窗口；Firefox下则不能。<br>解决方法：直接使用 window.open(pageURL,name,parameters) 方式打开新窗口。<br>如果需要将子窗口中的参数传递回父窗口，可以在子窗口中使用window.opener来访问父窗口。如果需要父窗口控制子窗口的话，使用 var subWindow = window.open(pageURL,name,parameters); 来获得新开的窗口对象。 </p>
+<p>十三、frame和iframe问题 </p>
+<p>以下面的frame为例： </p>
+<p>(1)访问frame对象<br>IE：使用window.frameId或者window.frameName来访问这个frame对象；<br>Firefox：使用window.frameName来访问这个frame对象；<br>解决方法：统一使用 window.document.getElementById(”frameId”) 来访问这个frame对象；<br>(2)切换frame内容<br>在IE和Firefox中都可以使用 window.document.getElementById(”frameId”).src = “webjx.com.html”或 window.frameName.location = “webjx.com.html”来切换frame的内容；<br>如果需要将frame中的参数传回父窗口，可以在frame中使用parent关键字来访问父窗口。 </p>
+<p>十四、body载入问题 </p>
+<p>问题说明：Firefox的body对象在body标签没有被浏览器完全读入之前就存在；而IE的body对象则必须在body标签被浏览器完全读入之后才存在。<br>[注] 这个问题尚未实际验证，待验证后再来修改。<br>[注] 经验证，IE6、Opera9以及FireFox2中不存在上述问题，单纯的JS脚本可以访问在脚本之前已经载入的所有对象和元素，即使这个元素还没有载入完成。 </p>
+<p>十五、事件委托方法 </p>
+<p>问题说明：IE下，使用 <code>document.body.onload = inject;</code> 其中<code>function inject()</code>在这之前已被实现；在Firefox下，使用 <code>document.body.onload = inject()</code>;<br>解决方法：统一使用 <code>document.body.onload=new Function(&#39;inject()&#39;);</code>或者 <code>document.body.onload = function(){/* 这里是代码 */}</code><br>[注意] Function和function的区别 </p>
+<p>十六、访问的父元素的区别 </p>
+<p>问题说明：在IE下，使用 obj.parentElement 或 obj.parentNode 访问obj的父结点；在firefox下，使用 obj.parentNode 访问obj的父结点。<br>解决方法：因为firefox与IE都支持DOM，因此统一使用obj.parentNode 来访问obj的父结点。 </p>
+<p>十七、innerText的问题. </p>
+<p>问题说明：<strong> innerText在IE中能正常工作，但是innerText在FireFox中却不行。 </strong><br>解决方法：在非IE浏览器中使用textContent代替innerText。<br>示例： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">if(navigator.appName.indexOf(&quot;Explorer&quot;) &gt;-1)&#123; </div><div class="line">document.getElementById(&apos;element&apos;).innerText = &quot;my text&quot;; </div><div class="line">&#125; else&#123; </div><div class="line">document.getElementById(&apos;element&apos;).textContent = &quot;my text&quot;; </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>[注] innerHTML 同时被ie、firefox等浏览器支持，其他的，如outerHTML等只被ie支持，最好不用。 </p>
+<p>十八、Table操作问题 </p>
+<p>问题说明：ie、firefox以及其它浏览器对于 table 标签的操作都各不相同，在ie中不允许对table和tr的innerHTML赋值，使用js增加一个tr时，使用appendChild方法也不管用。document.appendChild在往表里插入行时FIREFOX支持，IE不支持<br>解决办法：把行插入到TBODY中，不要直接插入到表<br>解决方法： </p>
+<p>//向table追加一个空行： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">var row = otable.insertRow(-1); </div><div class="line">var cell = document.createElement(&quot;td&quot;); </div><div class="line">cell.innerHTML = &quot;&quot;; </div><div class="line">cell.className = &quot;XXXX&quot;; </div><div class="line">row.appendChild(cell);</div></pre></td></tr></table></figure>
+<p>[注] 建议使用JS框架集来操作table，如JQuery。 </p>
+<p>十九、对象宽高赋值问题 </p>
+<p>问题说明：FireFox中类似 obj.style.height = imgObj.height 的语句无效。<br>解决方法：统一使用 obj.style.height = imgObj.height + ‘px’; </p>
+<p>二十、setAttribute(‘style’,’color:red;’)<br>FIREFOX支持(除了IE，现在所有浏览器都支持)，IE不支持<br>解决办法：不用setAttribute(‘style’,’color:red’)<br>而用object.style.cssText = ‘color:red;’(这写法也有例外)<br>最好的办法是上面种方法都用上，万无一失 </p>
+<p>二一、类名设置<br>setAttribute(‘class’,’styleClass’)<br>FIREFOX支持，IE不支持(指定属性名为class，IE不会设置元素的class属性，相反只使用setAttribute时IE自动识CLASSNAME属性)<br>解决办法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">setAttribute(&apos;class&apos;,&apos;styleClass&apos;) </div><div class="line"></div><div class="line">setAttribute(&apos;className&apos;,&apos;styleClass&apos;)</div></pre></td></tr></table></figure></p>
+<p>或者直接 <code>object.className=&#39;styleClass&#39;</code>; </p>
+<p>IE和FF都支持object.className。 </p>
+<p>二二、用setAttribute设置事件<br><code>var obj = document.getElementById(&#39;objId&#39;)</code>;<br><code>obj.setAttribute(&#39;onclick&#39;,&#39;funcitonname();&#39;)</code>;<br>FIREFOX支持，IE不支持<br>解决办法：<br>IE中必须用点记法来引用所需的事件处理程序,并且要用赋予匿名函数<br>如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">var obj = document.getElementById(&apos;objId&apos;); </div><div class="line">obj.onclick=function()&#123;fucntionname();&#125;;</div></pre></td></tr></table></figure></p>
+<p>这种方法所有浏览器都支持 </p>
+<p>二三、建立单选钮<br>IE以外的浏览器<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">var rdo = document.createElement(&apos;input&apos;); </div><div class="line">rdo.setAttribute(&apos;type&apos;,&apos;radio&apos;); </div><div class="line">rdo.setAttribute(&apos;name&apos;,&apos;radiobtn&apos;); </div><div class="line">rdo.setAttribute(&apos;value&apos;,&apos;checked&apos;);</div></pre></td></tr></table></figure></p>
+<p>IE:<br><code>var rdo =document.createElement(”&lt;input name=”radiobtn” type=”radio” value=”checked” /&gt;”);</code><br>解决办法：<br>这一点区别和前面的都不一样。这次完全不同，所以找不到共同的办法来解决，那么只有IF-ELSE了<br>万幸的是，IE可以识别出document的uniqueID属性，别的浏览器都不可以识别出这一属性。问题解决。</p>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> 兼容性问题 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[啃掉IE低版本这块硬骨头（一）]]></title>
+        <url>http://zhangyan123.github.io/2016/10/10/JS%E6%B5%8F%E8%A7%88%E5%99%A8%E5%85%BC%E5%AE%B9%E5%A4%84%E7%90%86(1)/</url>
+        <content type="html"><![CDATA[<h1 id="JS浏览器兼容性处理"><a href="#JS浏览器兼容性处理" class="headerlink" title="JS浏览器兼容性处理"></a>JS浏览器兼容性处理</h1><ul>
+<li><p>兼容事件处理</p>
+<blockquote>
+<p>按照DOM Level2的建议，事件传播分三个阶段（现代浏览器统一实现了这三个阶段）：先是捕获标签，然后到达对象，再冒泡。document出发寻找到事件源之后再返回到document，但是实际捕获事件时我们使用冒泡机制，在<code>addEventListener()</code>方法中体现为第三个参数置为<code>false</code>。<br>由于绝大多数浏览器完全实现了DOM1标准,但事件方面的标准化是在DOM2中才完成的,导致IE9之前的版本与其他浏览器在这方面表现存在差异.      </p>
+</blockquote>
+<ul>
+<li>IE9之前的事件监听<br>添加监听器：IE5开始使用attachEvent()方法，更早版本只能使用内嵌在html中的属性方法，eg:<code>element.onclick=function(){//这是事件处理器}</code></li>
+<li>事件源 <code>srcElement</code></li>
+<li>阻止冒泡 <code>cancelBubble=ture;</code>IE只支持冒泡机制</li>
+<li>阻止默认行为 <code>returnValue=false;</code></li>
+<li>取消事件监听 <code>detachEvent()</code>相对于现代浏览器中的<code>removeEventListener()</code><br>基于以上分析,整理跨浏览器事件处理器如下:     <pre>function callback(e){
+var e=e||window.event;
+var target=e.target||e.srcElement;
+console.log(target.nodeName);
+}
+if(document.addEventListener){
+document.addEventListener('click',callback,false);
+}else if(document.attachEvent){
+document.attachEvent('click',callback);
+}else{
+document.onclick=callback;
+}</pre>
+
+
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><p>异步请求<br>我们知道目前非常熟悉的Ajax是通过XMLHttpRequest对象来进行Http请求的，在IE7之前这个对象不存在，我们可以使用的类似对象是ActiveXobject,eq:<code>var xhr = new ActiveXobject(‘MSXML2.XMLHTTP.3.0’)</code>   参数中的字符串是一个版本标识符，实际上XHR对象有几个不同的版本，应该根据用户客户端对版本的支持情况创建不同的XHR对象.<br>根据以上分析编写异步请求AJAX工具集如下：     </p>
+<pre>function request(url,message,callback()){
+  var versions=[
+    'MSXML2.XMLHTTP.3.0',
+    'MSXML2.XMLHTTP',
+    'Microsoft.XMLHTTP'
+  ];
+  var xhr;
+  if(XHRHttpRequest){
+    xhr=new XMLHttpRequest();
+  }else{
+    for(var i=0;i< versions.length;i++){
+      try{
+        xhr=new ActiveXobject(versions[i]);
+        break;
+      }catch(e){}
+    }
+  }
+  xhr.onreadystatechange = (function(myxhr){
+     return function(){
+       if(myxhr.readyState ====4 && myxhr.status ===200){
+         callback(xhr);
+       }
+     }
+  })(xhr);
+  xhr.open('post',url,true);//true代表了异步请求
+  xhr.send(message);
+}</pre> 
+</li>
+<li><p>css机制      </p>
+<ul>
+<li><p><strong> 兼容性处理要点 ：</strong></p>
+<ol>
+<li><p>DOCTYPE 影响 CSS 处理 </p>
+</li>
+<li><p>FF: 设置 padding 后， div 会增加 height 和 width， 但 IE 不会， 故需要用 !important 多设一个 height 和 width </p>
+</li>
+<li><p>FF: 支持 !important， IE 则忽略， 可用 !important 为 FF 特别设置样式 </p>
+</li>
+<li><p>div 的垂直居中问题: vertical-align:middle; 将行距增加到和整个DIV一样高 line-height:200px; 然后插入文字，就垂直居中了。缺点是要控制内容不要换行 </p>
+</li>
+<li><p>在mozilla firefox和IE中的BOX模型解释不一致导致相差2px解决方法： </p>
+<p>div{margin:30px!important;margin:28px;} </p>
+<p>注意这两个margin的顺序一定不能写反，!important这个属性IE不能识别，但别的浏览器可以识别。所以在IE下其实解释成这样： </p>
+<p>div{maring:30px;margin:28px} </p>
+<p>重复定义的话按照最后一个来执行，所以不可以只写margin:XXpx!important; </p>
+</li>
+</ol>
+</li>
+<li><p><strong>浏览器差异:</strong> </p>
+<ol>
+<li><p>ul和ol列表缩进问题 </p>
+<p>消除ul、ol等列表的缩进时，样式应写成：list-style:none;margin:0px;padding:0px;<br>其中margin属性对IE有效，padding属性对FireFox有效。 </p>
+<p>[注]经验证，在IE中，设置margin:0px可以去除列表的上下左右缩进、空白以及列表编号或圆点，设置padding对样式没有影响；在 Firefox 中，设置margin:0px仅仅可以去除上下的空白，设置padding:0px后仅仅可以去掉左右缩进，还必须设置list- style:none才 能去除列表编号或圆点。也就是说，在IE中仅仅设置margin:0px即可达到最终效果，而在Firefox中必须同时设置margin:0px、 padding:0px以及list-style:none三项才能达到最终效果。 </p>
+</li>
+<li><p>CSS透明问题 </p>
+<p>IE：filter:progid:DXImageTransform.Microsoft.Alpha(style=0,opacity=60)。<br>FF：opacity:0.6。<br>[注] 最好两个都写，并将opacity属性放在下面。 </p>
+</li>
+<li><p>CSS圆角问题 </p>
+<p>IE：ie7以下版本不支持圆角。<br>FF： -moz-border-radius:4px，或者-moz-border-radius-topleft:4px;-moz- border- radius-topright:4px;-moz-border-radius-bottomleft:4px;-moz- border- radius- bottomright:4px;。<br>[注] 圆角问题是CSS中的经典问题，建议使用JQuery框架集来设置圆角，让这些复杂的问题留给别人去想吧。不过jQuery的圆角只看到支持整个区域的圆角，没有支持边框的圆角，不过这个边框的圆角可以通过一些简单的手段来实现，下次有机会介绍下。 </p>
+</li>
+<li><p>cursor:hand VS cursor:pointer </p>
+<p>问题说明：firefox不支持hand，但ie支持pointer ，两者都是手形指示。<br>解决方法：统一使用pointer。 </p>
+</li>
+<li><p>字体大小定义不同 </p>
+<p>对字体大小small的定义不同，Firefox中为13px，而IE中为16px，差别挺大。 </p>
+<p>解决方法：使用指定的字体大小如14px。 </p>
+<p>并列排列的多个元素（图片或者链接）的div和div之间，代码中的空格和回车在firefox中都会被忽略，而IE中却默认显示为空格（约3px）。 </p>
+</li>
+<li><p>CSS双线凹凸边框<br>IE：border:2px outset;。<br>FF： -moz-border-top-colors: #d4d0c8 white;-moz-border-left-colors: #d4d0c8 white;-moz-border-right-colors:#404040 #808080;-moz-border-bottom-colors:#404040 #808080; </p>
+</li>
+</ol>
+</li>
+<li><p><strong>浏览器bug:</strong> </p>
+<ol>
+<li><p>IE的双边距bug </p>
+<p>设置为float的div在ie下设置的margin会加倍。这是一个ie6都存在的bug。 </p>
+<p>解决方案：在这个div里面加上display:inline; </p>
+<p>例如： </p>
+<p><code>&lt;#div id=”imfloat”&gt;</code> </p>
+<p>相应的css为 </p>
+<pre>#IamFloat{ 
+float:left; 
+margin:5px;/*IE下理解为10px*/ 
+display:inline;/*IE下再理解为5px*/ 
+} 
+#IamFloat{ 
+float:left; 
+margin:5px;/*IE下理解为10px*/ 
+display:inline;/*IE下再理解为5px*/ 
+}</pre> 
+
+<p>关于CSS中的问题实在太多了，甚至同样的CSS定义在不同的页面标准中的显示效果都是不一样的。一个合乎发展的建议是，页面采用标准XHTML标准编写，较少使用table，CSS定义尽量依照标准DOM，同时兼顾IE、Firefox、Opera等主流浏览器。很多情况下，FF和 Opera的CSS解释标准更贴近CSS标准，也更具有规范性。 </p>
+</li>
+<li><p>IE选择符空格BUG<br>一个空格也可以使样式失效。 </p>
+<figure class="highlight plain"><figcaption><span>html PUBLIC "-//W3C//DTD XHTML 1.0</span><a href="/Transitional//EN//www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">">link</a></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">&lt;html xmlns=&quot;//www.w3.org/1999/xhtml&quot;&gt; </div><div class="line">&lt;head&gt; </div><div class="line">&lt;title&gt;&lt;/title&gt; </div><div class="line">&lt;style type=&quot;text/css&quot;&gt; </div><div class="line">&lt;!-- </div><div class="line">p&#123;font-size:12px;&#125; </div><div class="line">p:first-letter&#123;font-size:300%&#125; </div><div class="line">--&gt; </div><div class="line">&lt;/style&gt; </div><div class="line">&lt;/head&gt; </div><div class="line">&lt;body&gt; </div><div class="line">&lt;p&gt;对于世界而言，你是一个人；但是对于某个人，你是他的整个世界。纵然伤心，也不要愁眉不展，因为你不知是谁会爱上你的笑容。&lt;/p&gt; </div><div class="line">&lt;/body&gt; </div><div class="line">&lt;/html&gt;</div></pre></td></tr></table></figure>
+<p>这段代码对<code>&lt;p&gt;</code>的首字符样式定义在IE6上看是没有效果的（IE7没测试），而在p:first-letter和{font-size:300%}加上空格，也就是p:first-letter {font-size:300%}后，显示就正常了。但是同样的代码，在FireFox下看是正常的。按道理说，p:first-letter{font-size:300%}的写法是没错的。那么问题出在哪里呢？答案是伪类中的连字符”-”。IE有个BUG，在处理伪类时，如果伪类的名称中带有连字符”-”，伪类名称后面就得跟一个空格，不然样式的定义就无效。而在FF中，加不加空格都可以正常处理。</p>
+</li>
+</ol>
+</li>
+</ul>
+</li>
+<li><p>SSE(Server-sent Events)全新HTML5服务器推送事件技术，很明显只有现代浏览器才支持</p>
+</li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> 兼容性问题 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[浏览器环境]]></title>
+        <url>http://zhangyan123.github.io/2016/10/08/%E6%B5%8F%E8%A7%88%E5%99%A8%E7%8E%AF%E5%A2%83/</url>
+        <content type="html"><![CDATA[<h1 id="浏览器环境"><a href="#浏览器环境" class="headerlink" title="浏览器环境"></a>浏览器环境</h1><p><div style="display:inline-block;"><img src="/images/browser.png" alt="myBlog"></div><br>我们所说的内建方法与内建对象都可以理解为是全局对象的方法与成员。我们之后将全局对象称为head对象，举例子来说，node.js中的head对象是global对象，而浏览器中的head对象则是window，在console控制台中打印window可以看到全局的方法和属性,从图中可以看出window对象中会包含js原生对象，会包含DOM对象集合，同时还会包含一个可访问浏览器和计算机屏幕的对象集合。</p>
+<p><strong> BOM能做哪些事情？</strong></p>
+<ul>
+<li>navigator属性：访问浏览器及其功能信息 eg:window.navigator.userAgent  </li>
+<li>浏览器提供的控制台提供了遍历的对象检索功能，只需输入想要查询的对象便可以查看该对象全部的成员（对于本节内容有不详之处打印大发伺候）<code>console.dir()</code></li>
+<li>location属性：用于存储当前载入页面URL信息的对象</li>
+<li>history属性：属性允许用户以有限权限操作同一个浏览器回话（session）中已访问的页面。</li>
+<li>frames属性为我们提供访问当前页所有框架的集合（一个类数组）</li>
+<li>screen属性提供的是操作浏览器意外环境的句柄，可访问PC屏幕信息</li>
+<li>BOM中的全局方法：<ul>
+<li><pre>var win=window.open(URL,target,’width:123,height:123,resizable:yes,status:no’)//status</pre>用于设置状态栏可见性,open方法返回打开的窗口句柄win,关闭及操作时使用win为当前环境，eg:<code>win.close();</code></li>
+<li>其他：moveTo()、moveBy()、alert()、prompt)()、confirm()</li>
+<li>window.setTimeout()及setInterval()在程序中经常会出现始料未及的结果，首先这两个函数的参数环境是eval环境，在使用时延时应尽量封装好回调函数直接引用函数名，而非在参数中使用可执行的字符串。由于浏览器处理事件是有队列的，时延间隔到了回调函数也要按秩序进队等待被调用，因此导致的时间不准确是应该在预料之中的。</li>
+</ul>
+</li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> 基础 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[继承]]></title>
+        <url>http://zhangyan123.github.io/2016/09/30/%E7%BB%A7%E6%89%BF/</url>
+        <content type="html"><![CDATA[<h1 id="继承实现原理（从上到下由浅入深）"><a href="#继承实现原理（从上到下由浅入深）" class="headerlink" title="继承实现原理（从上到下由浅入深）"></a>继承实现原理（从上到下由浅入深）</h1><ol>
+<li><p>原型链继承模式<br><pre>function Shape(){</pre></p>
+<pre><code>this.name=&apos;shape&apos;;
+</code></pre><p>};</p>
+<p>Shape.prototype.toString=function(){</p>
+<pre><code>return this.name;
+</code></pre><p>};</p>
+<p>function Triangle(side,height){</p>
+<pre><code>this.name=&apos;triangle&apos;;
+this.side=side;
+this.height=height;
+</code></pre><p>}<br>Triangle.prototype.getArea=function(){</p>
+<pre><code>return this.side*this.height/2;
+</code></pre><p>};<br>Triangle.prototype=new Shape();<br>Triangle.prototype.constructor=Triangle;</p>
+<blockquote>
+<p>这种继承模式除了共享了“父类”（模拟说法，后面部分均直白表示为父类和子类）原型中的属性和方法之外，在原型上父类个性拥有的name属性，造成不必要资源浪费。<br><div style="display:inline-block;"><img src="/images/prototypeChain.png" alt="myBlog">&lt;/div</div></p>
+</blockquote>
+</li>
+</ol>
+<ol>
+<li><p>临时构造器继承模式<br> 根据之前的分析知道<code>Triangle.prototype=new Shape();</code>语句造成了对多余父类属性的拷贝，为避免不共享的成员不被拷贝，我们可以启用临时“空”（只扮演传递父类原型指针的角色）构造器，并指定其原型属性指向父类原型。以此解决上述问题。</p>
+  <pre>function Shape(){
+    this.name='shape';
+};
+
+Shape.prototype.toString=function(){
+    return this.name;
+};
+
+function Triangle(side,height){
+    this.name='triangle';
+    this.side=side;
+    this.height=height;
+}
+ <strong>var F=function (){};
+ F.prototype=Shape.prototype;
+ Triangle.prototype=new F();
+ Triangle.prototype.constructor=Triangle;
+ </strong>
+
+Triangle.prototype.getArea=function(){
+    return this.side*this.height/2;
+};</pre>进一步优化   
+
+   <pre>function Shape(){
+    this.name='shape';
+}
+
+Shape.prototype.toString=function(){
+    return this.name;
+};
+
+function Triangle(side,height){
+    this.name='triangle';
+    this.side=side;
+    this.height=height;
+}
+ <strong>var F=function (){
+     this.getArea=function(){
+         return this.side*this.height/2;
+     };
+ };
+ F.prototype=Shape.prototype;
+ Triangle.prototype=new F();
+ Triangle.prototype.constructor=Triangle;
+ </strong></pre>现在我们已经具备了一种比较良好的继承模式，既可以继承到父类的共享内容，又可以在子类中添加个性的成员而不对其父类造成影响，下面我们在核心功能的基础上增强继承的能力，增加子类访问父类成员的通道（模拟java super,super是js保留字故采用德语中的同义词uber替代）。            
+<pre>function Shape(){
+    this.name='shape';
+}
+
+Shape.prototype.toString=function(){
+    return this.name;
+};
+
+function Triangle(side,height){
+    this.name='triangle';
+    this.side=side;
+    this.height=height;
+}
+     var F=function (){
+         this.getArea=function(){
+         return this.side*this.height/2;
+         };
+         this.uber=Shape.prototype;
+     };
+     F.prototype=Shape.prototype;
+     F.uber=Shape.prototype;
+     Triangle.prototype=new F();
+     Triangle.prototype.constructor=Triangle;</pre>       
+
+<p> <strong>工具集:</strong>       </p>
+ <pre>function extend(Child,Parent){
+     var F=function(){};
+     F.prototype=Parent.prototype;
+     Child.prototype=new F();
+     Child.prototype.constructor=Child;
+     Child.uber=Parent.prototype;
+ }</pre>
+</li>
+<li><p>前面介绍了原型链继承模式，在模拟传统继承方式时还可以简单粗暴的将父类的原型中成员直接拷贝到子类原型中。<br><strong>工具集:</strong>     </p>
+<pre>function extend2(Child,Parent){
+    var c=Child.prototype,p=Parent.prototype;
+    for(var i in p){
+        c[i]=p[i]
+    }
+    c.uber=p;
+}</pre>        
+值得注意的是prototype中的constructor属性是不可枚举的，在for-in循环中不会被拷贝，子类保有自己正确的constructor指向。      
+以上拷贝很明显是浅拷贝，当父类中有对象成员，甚至对象成员中还有对象子成员时，以上拷贝会造成引用传递，子类在修改属性时引发父类属性同时变化，下面介绍深拷贝工具集。         
+<strong>工具集:</strong>
+<pre>function deepcopy(p,c){
+    c = c||{};
+    for(var i in p){
+        if(p.hasOwnProperty(i)){
+            if(typeOf p[i] ==== 'object'){
+                c[i] =Array.isArray(p[i])?[]:{};
+                deepCopy(p[i],c[i]);
+            }else{
+                c[i]=p[i];
+            }
+        }
+    }
+    return c;
+}</pre>       
+<pre>ES5中实现了isArray，为了向下兼容补充工具集如下(全局)：       
+if(Array.isArray !=='function'){
+    Array.isArray = function(args){
+        return Object.prototype.toString.call(args) === '[object Array]';
+    };
+}</pre>       </li>
+<li><p>前面介绍了原型链继承模型和简单的成员拷贝模式，我们在继承当中不仅要复用父类的方法还会有增加新方法的需求，因此结合两种方式模式增强我们的继承工具集如下：<br><strong>工具集(基于构造器模式):</strong>       </p>
+<pre>function extendX(P,stuff){
+var n;
+function F(){};
+F.prototype=P.prototype;
+n=new F();
+n.uber=P.prototype;
+
+for(var i in stuff){
+    n[i]=stuff[i]
+}
+return n;
+}</pre>             
+
+</li>
+</ol>
+<p><strong>工具集(基于对象模式):</strong>       </p>
+<pre>function extendX(o,stuff){
+    var n;
+    function F(){};
+    F.prototype=o;
+    n=new F();
+    n.uber=o;
+
+    for(var i in stuff){
+        n[i]=stuff[i]
+    }
+    return n;
+}</pre>   
+
+<ol>
+<li>借用构造器+原型复制 模式实现继承<br>借用构造器使得我们可以在子类构造器中调用福构造器，但是此处apply调用是方法调用，不会继承父类的原型属性，为了补充这块空缺，可以使用extend2或者deepCopy函数进行原型拷贝，让子类继承到父类的成员与原型成员。<br>借用构造器形式举例:        <pre>function Triangle(){
+    Shape.apply(this,arguments);
+}</pre>
+
+
+
+
+
+
+
+
+
+
+
+</li>
+</ol>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> 基础 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[对象]]></title>
+        <url>http://zhangyan123.github.io/2016/09/20/%E5%AF%B9%E8%B1%A1/</url>
+        <content type="html"><![CDATA[<h1 id="javaScript是基于原型-prototype-面向对象的动态语言（对象）"><a href="#javaScript是基于原型-prototype-面向对象的动态语言（对象）" class="headerlink" title="javaScript是基于原型(prototype)面向对象的动态语言（对象）"></a>javaScript是基于原型(prototype)面向对象的动态语言（对象）</h1><ul>
+<li>JS对象中的属性可以 <strong>动态</strong> 得进行增、删(delete)、修改；</li>
+<li>JS中的数组实质为键值由0开始自增的特殊对象，数组一般用来存放有规律的一组数据，无需特殊的索引；</li>
+<li>对象与数组的不同在于键值可以自定义；</li>
+<li>对象属性枚举<ul>
+<li>使用for-in枚举对属性时候一般来属性都是方法为我们枚更加关注的是数据，舍弃类型为函链上出乎预料的方法，另一个只取本对象上的属性的方法是hasOwnProperty()。</li>
+<li>for-in遍历对象时候顺序是不定的，如果需要按照一定顺序遍历对象属性最好使用一个数组将需要的属性按顺序存入，在for循环中依次取出对象中排列的属性。</li>
+</ul>
+</li>
+<li>原型只在检索时候才被用到，如果我们尝试获取对象的某个属性值，但该对象属性名，那么Javascript会尝试从原型对象中寻找，如果原型对象没有再去该对象中去找，以此类推，知道终点Object.prototy如果想要的属性完全不存在原型链中，那么结果就是undefined这个称为<strong>委托</strong>。</li>
+<li>对象的创建：<ul>
+<li>使用字面量{}创建<br>字面量对象中有属性和方法，属性名是标识符或者字符串，这些名字被当做字面量名而非变量名对待，所以对象的属性名在编译时才能知道，属性的值就是表达式（所以属性之间使用逗号分隔）。</li>
+<li>使用new+构造函数创建</li>
+<li>构造函数举例      <pre>function Constr(name){
+          this.name=name;
+          this.say=function(){
+              return this.name;
+          };
+  }</pre></li>
+<li>实例化举例   <pre>var instance = new Constr("zhangyan");
+  instance.say();//"zhangyan"</pre>     </li>
+<li>实例化过程 <strong>模拟</strong><br>当我们使用new操作符调用函数时，js默默完成了创建新对象并初始化新对象的操作<br>   <pre>var this={};<br>  this.name=arguments[0];<br>  this.say=fucntion(){<pre><code>return this.name;
+</code></pre>  };<br>  this._proto_=Constr.prototype;<br>  return this;</pre> 以上为伪代码只可意会，并不代表真实代码 </li>
+<li><pre>instance instanceOf Constr;//true<br>typeOf instance===”object”;<br>instance.constructor===Constr//true constructor</pre>属性继承自Object</li>
+</ul>
+</li>
+<li>你应该记住的关于内建对象扩展的讨论：<blockquote>
+<p>最常用例子：实现让老式浏览器支持新功能，而且应该是ECMAScript委员会标准化了的，为现代浏览器支持的新功能，例如让IE支持ES5中的方法，这类扩展叫做shims或者polyfills.<strong>在进行原型扩展之前需要先检查该方法是否已存在</strong></p>
+</blockquote>
+</li>
+<li>你应该记住的内建对象方法：<br> 1.Date<br> 属性(1):<br> constructor      所建立对象的函数参考<br> prototype       能够为对象加入的属性和方法<br> 方法(43):<br> getDay()        返回一周中的第几天(0-6)<br> getYear()       返回年份.2000年以前为2位,2000(包含)以后为4位<br> getFullYear()     返回完整的4位年份数<br> getMonth()      返回月份数(0-11)<br> getDate()       返回日(1-31)<br> getHours()       返回小时数(0-23)<br> getMinutes()      返回分钟(0-59)<br> getSeconds()      返回秒数(0-59)<br> getMilliseconds() 返回毫秒(0-999)<br> getUTCDay()      依据国际时间来得到现在是星期几(0-6)<br> getUTCFullYear()    依据国际时间来得到完整的年份<br> getUTCMonth()     依据国际时间来得到月份(0-11)<br> getUTCDate()      依据国际时间来得到日(1-31)<br> getUTCHours()     依据国际时间来得到小时(0-23)<br> getUTCMinutes()    依据国际时间来返回分钟(0-59)<br> getUTCSeconds()    依据国际时间来返回秒(0-59)<br> getUTCMilliseconds()依据国际时间来返回毫秒(0-999)<br> getTime()       返回从1970年1月1号0:0:0到现在一共花去的毫秒数<br> getTimezoneoffset() 返回时区偏差值,即格林威治平均时间(GMT)与运行脚本的计算机所处时区设置之间相差的分钟数)<br> parse(dateString)   返回在Date字符串中自从1970年1月1日00:00:00以来的毫秒数<br> setYear(yearInt)    设置年份.2位数或4位数<br> setFullYear(yearInt)设置年份.4位数<br> setMonth(monthInt) 设置月份(0-11)<br> setDate(dateInt)    设置日(1-31)<br> setHours(hourInt) 设置小时数(0-23)<br> setMinutes(minInt) 设置分钟数(0-59)<br> setSeconds(secInt) 设置秒数(0-59)<br> setMilliseconds(milliInt) 设置毫秒(0-999)<br> setUTCFullYear(yearInt) 依据国际时间来设置年份<br> setUTCMonth(monthInt) 依据国际时间来设置月(0-11)<br> setUTCDate(dateInt)     依据国际时间来设置日(1-31)<br> setUTCHours(hourInt)    依据国际时间来设置小时<br> setUTCMinutes(minInt) 依据国际时间来设置分钟<br> setUTCSeconds(secInt)    依据国际时间来设置秒<br> setUTCMilliseconds(milliInt)依据国际时间来设置毫秒<br> setTime(timeInt)    设置从1970年1月1日开始的时间.毫秒数<br> toGMTString()     根据格林威治时间将Date对象的日期(一个数值)转变成一个GMT时间字符串,如:Weds,15 June l997 14:02:02 GMT<br> toUTCString()     根据通用时间将一个Date对象的日期转换为一个字符串<br> toLocaleString()    把Date对象的日期(一个数值)转变成一个字符串,使用所在计算机上配置使用的特定日期格式<br> toSource()       显示对象的源代码<br> toString()       将日期对象转换为字符串<br> UTC(yyyy, mm, dd, hh, mm, ss, msec)返回从格林威治标准时间到指定时间的差距,单位为毫秒<br> valueOf()       返回日期对象的原始值<br> 2.Math<br> 属性:<br> constructor      所建立对象的函数参考<br> prototype       能够为对象加入的属性和方法<br> E           欧拉常量,自然对数的底(约等于2.718)<br> LN2          2的自然对数(约等于0.693)<br> LN10          10的自然对数(约等于2.302)<br> LOG2E         以2为底的e的对数.(约等于1.442)<br> LOG10E         以10为底的e的对数(约等于0.434)<br> PI           ∏的值(约等于3.14159)<br> SQRT1_2        1/2(0.5)的平方根(即l除以2的平方根,约等于o.707)<br> SQRT2         2的平方根(约等于1.414)<br> 方法:<br> abs(x)     返回数字的绝对值<br> acos(x)    返回数字的反余弦值<br> asin(x)    返回数字的反正弦值<br> atan(x)    返回位于-PI/2 和 PI/2 的反正切值<br> atan2(y,x) 返回（x,y）位于 -PI 到 PI 之间的角度<br> ceil(x)    返回 x 四舍五入后的最大整数<br> cos(x)     返回一个数字的余弦值<br> exp(x)     返回 E^x 值<br> floor(x)    返回 x 四舍五入后的最小整数<br> log(x)     返回底数为E的自然对数<br> max(x,y)    返回 x 和 y 之间较大的数<br> min(x,y)    返回 x 和 y 之间较小的数<br> pow(x,y)    返回 y^x 的值<br> random()    返回位于 0 到 1 之间的随机函数<br> round(x)    四舍五入后取整<br> sin(x)     返回数字的正弦值<br> sqrt(x)    返回数字的平方根<br> tan(x)     返回一个角度的正切值<br> toSource() 显示对象的源代码<br> valueOf() 返回数学对象的原始值<br> 3.Number<br> 属性:<br> MAX_VALUE       The largest possible value a number in JavaScript can have 1.7976931348623157E+308<br> MIN_VALUE       The smallest possible value a number in JavaScript can have 5E-324<br> NaN          Equal to a value that is not a number.<br> NEGATIVE_INFINITY A value that is less than MIN_VALUE.<br> POSOTIVE_INFINITY A value that is greater than <code>MAX<em>VALUE</em></code>.<br> prototype       A static property of the Number object<br> 方法:<br> toString       Returns a string representing the specified object<br> valueOf()      返回数学对象的原始值<br> 4.Boolean<br> 属性:<br> constructor 所建立对象的函数参考<br> prototype    能够为对象加入的属性和方法<br> 方法:<br> toSource()    显示对象的源代码<br> toString()    将布尔值转换为字符串,并且返回结果<br> valueOf()    返回布尔对象的原始值<br> 5.String<br> 属性:<br> constructor 所建立对象的函数参考<br> prototype    能够为对象加入的属性和方法<br> length      返回字符串的字符长度<br> 方法(20):<br> anchor(“name”)用来把字符串转换为HTML锚点标记内<code>(&lt;A NAME=&gt;)</code><br> big()      把字符串中的文本变成大字体<code>(&lt;BIG&gt;)</code><br> blink()     把字符串中的文本变成闪烁字体<code>(&lt;BLINK&gt;)</code><br> bold()      把字符串中的文本变成黑字体<code>(&lt;B&gt;)</code><br> fixed()     把字符串中的文本变成固定间距字体,即电报形式<code>(&lt;TT&gt;)</code><br> fontcolor(color)设置字符串中文本的颜色<code>(&lt;FONT COLOR=&gt;)</code><br> Fontsize(size) 把字符串中的文本变成指定大小<code>(&lt;FONTSIZE=&gt;)</code><br> italics()    把字符串中的文本变成斜字体<code>(&lt;I&gt;)</code><br> Link(url)用来把字符串转换-HTML链接标记中<code>(&lt;A HREF=&gt;)</code><br> small()     把字符串中的文本变成小字体<code>(&lt;SMALL&gt;)</code><br> strike()     把字符串中的文本变成划掉字体<code>(&lt;STRIKE&gt;)</code><br> sub()      把字符串中的文本变成下标(subscript)字体<code>(&lt;SUB&gt;)</code><br> sup()      把字符串中的文本变成上标(superscript)字体<code>(&lt;SUP&gt;)</code><br> charAt(index) 返回指定索引处的字符<br> charCodeAt(index)返回一个整数,该整数表示String对象中指定位置处的字符的Unicode编码<br> concat(string2)连接两条或多条字符串<br> fromCharCode(num1, num2, …, numN)获取指定的Unicode值并返回字符串<br> indexOf(searchString, startIndex) 返回字符串中第一个出现指定字符串的位置<br> lastlndexOf(searchString, startIndex) 返回字符串中最后一个出现指定字符串的位置<br> match(regex) 在字符串中查找指定值<br> replace(regex, newString)将字符串中的某些字符替换成其它字符<br> search(regex) 针对某执行值对字符串进行查找<br> slice(startIndex, endIndex)将部分字符抽出并在新的字符串中返回剩余部分<br> split(delimiter)将字符串分配为数组<br> substr(startIndex, length) 从startIndex取,取length个字符<br> substring(startIndex, endIndex) 从startIndex和endIndex之间的字符,不包括endIndex<br> toLowerCase() 把字符串中的文本变成小写<br> toUpperCase() 把字符串中的文本变成大写<br> toSource()    显示对象的源代码<br> valueOf()    返回字符串对象的原始值<br> 6.Array<br> 属性:<br> constructor 所建立对象的函数参考<br> prototype    能够为对象加入的属性和方法<br> index      For an array created by a regular expression match, the zero-based index of the match in the string.<br> input      For an array created by a regular expression match, reflects the original string against which the regular expression was matched.<br> length      获取数组元素的个数,即最大下标加1<br> 方法(13):<br> concat(array1,arrayn)将两个或两个以上的数组值连接起来,合并后返回结果<br> join(string) 将数组中元素合并为字符串,string为分隔符.如省略参数则直接合并,不再分隔<br> pop()      移除数组中的最后一个元素并返回该元素<br> push(value) 在数组的末尾加上一个或多个元素,并且返回新的数组长度值<br> reverse()    颠倒数组中元素的顺序,反向排列<br> shift()     移除数组中的第一个元素并返回该元素<br> slice(start, deleteCount, [item1[, item2[,…[,itemN]]]]) 返从一个数组中移除一个或多个元素,如果必要,在所移除元素的位置上插入新元素,返回所移除的元素<br> sort(compare Function) 在未指定排序号的情况下,按照元素的字母顺序排列,如果不是字符串类型则转换成字符串再排序,返回排序后的数组<br> splice()     为数组删除并添加新的元素<br> toSource()    显示对象的源代码<br> toString()    将数组所有元素返回一个字符串,其间用逗号分隔<br> unshift(value)为数组的开始部分加上一个或多个元素,并且返回该数组的新长度<br> valueOf()    返回数组对象的原始值<br> 7.RegExp<br> 属性:<br> $1, …, $9 Parenthesized substring matches, if any.<br> $        See input.<br> $*        See multiline.<br> $&amp;        See lastMatch.<br> $+        See lastParen.<br> $`        See leftContext.<br> $’        See rightContext.<br> global      Whether or not to test the regular expression against all possible matches in a string, or only against the first.<br> ignoreCase    Whether or not to ignore case while attempting a match in a string.<br> input      The string against which a regular expression is matched.<br> lastIndex    The index at which to start the next match.<br> lastMatch    The last matched characters.<br> lastParen    The last parenthesized substring match, if any.<br> leftContext The substring preceding the most recent match.<br> multiline    Whether or not to search in strings across multiple lines.<br> rightContext The substring following the most recent match.<br> source      The text of the pattern.<br> 方法:<br> compile     Compiles a regular expression object.<br> exec       Executes a search for a match in its string parameter.<br> test       Tests for a match in its string parameter<br> 8.Function<br> 属性:<br> arguments    An array corresponding to the arguments passed to a function.<br> arity      Indicates the number of arguments expected by the function.<br> caller      Specifies which function called the current function.<br> prototype    Allows the addition of properties to a Function object.<br> 方法:<br> toString     Returns a string representing the specified object.<br> 9.Object<br> 属性:<br> constructor Specifies the function that creates an object’s prototype.<br> prototype    Allows the addition of properties to all objects.<br> 方法:<br> eval       Evaluates a string of JavaScript code in the context of the specified object.<br> toString     Returns a string representing the specified object.<br> unwatch     Removes a watchpoint from a 属性源 the object.<br> valueOf     Returns the primitive value of the specified object.<br> watch      Adds a watchpoint to a 属性源 the object.<br> 10.全局<br> 属性:<br> Infinity     指定一个正负无穷大的数值<br> NaN       指定一个 “非数字” 值<br> undefined    指定一个未被赋值的变量<br> 方法:<br> decodeURI()       为加密的URI进行解码<br> decodeURIComponent() 为加密的URI组件解码<br> encodeURI()       将字符串加密为URI<br> encodeURIComponent() 将字符串加密为URI组件<br> escape(string)      加密一个字符串<br> unescape()        使用escape()对一个字符串进行解码<br> eval(string)       判断一个字符串并将其以脚本代码的形式执行<br> isFinite(number)     检测一个值是否为一个有限数字,返回True或False<br> isNaN(string)      检测一个值是否不是一个有限数字<br> Number()         将一个对象的值转换为一个数字<br> parseFloat(string)    将一个字符串解析为一个浮点数字<br> parseInt(string)     将一个字符串解析为一个整数,不是四舍五入操作,而是切尾<br> String(object)      将一个对象值转换为一个字符串<br> number(object)<br> 11.事件<br> 属性:<br> a.窗口事件,只在body和frameset元素中才有效<br> onload      页面或图片加载完成时<br> onunload     用户离开页面时<br> b.表单元素事件,在表单元素中才有效<br> onchange     框内容改变时<br> onsubmit     点击提交按钮时<br> onreset     重新点击鼠标按键时<br> onselect     文本被选择时<br> onblur      元素失去焦点时<br> onfocus     当元素获取焦点时<br> c.键盘事件,在base,bdo,br,frame,frameset,head,html,iframe,meta,param,script,style,title元素里都无效<br> onkeydown    按下键盘按键时<br> onkeypress    按下或按住键盘按键时<br> onkeyup     放开键盘按键时<br> d.在base,bdo,br,frame,frameset,head,html,iframe,meta,param,script,style,title元素里都无效<br> onclick     鼠标点击一个对象时<br> ondblclick    鼠标双击一个对象时<br> onmousedown 鼠标被按下时<br> onmousemove 鼠标被移动时<br> onmouseout    鼠标离开元素时<br> onmouseover 鼠标经过元素时<br> onmouseup    释放鼠标按键时<br> e.其他<br> onresize     当窗口或框架被重新定义尺寸时<br> onabort     图片下载被打断时<br> onerror     当加载文档或图片时发生错误时</li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> 基础 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[常用数组处理函数和语法]]></title>
+        <url>http://zhangyan123.github.io/2016/09/18/%E5%B8%B8%E7%94%A8%E7%9A%84%E6%95%B0%E7%BB%84%E5%A4%84%E7%90%86%E5%87%BD%E6%95%B0%E5%92%8C%E8%AF%AD%E6%B3%95/</url>
+        <content type="html"><![CDATA[<ul>
+<li>reduce()<ul>
+<li>功能：接收一个函数作为累加器，数组中的每一个数值（从左到右）开始合并，最终为一个值。</li>
+<li>语法：<code>array.reduce(callback,[initialValue])</code></li>
+<li>callback()的参数： previousValue,currentValue,index,array,initialValue</li>
+</ul>
+</li>
+<li>filter()<ul>
+<li>功能：接收一个函数作为测试器，测试数组中的所有元素，并创建一个包含了所有通过测试元素的新数组。</li>
+<li>语法：<code>array.filter(callback[,thisArg])</code>//thisArg为可选值，指定callback中的this指向</li>
+<li>callback()的参数：currentValue,index,array</li>
+</ul>
+</li>
+<li>map()<ul>
+<li>功能：接收一个函数用于在每个元素在执行，返回一个由原数组中的每一个元素执行callback函数之后产生的结果构成的新数组。</li>
+<li>语法：<code>array.map(callback[,thisArg])</code></li>
+<li>callback()的参数：currentValue,index,array</li>
+</ul>
+</li>
+<li>every()<ul>
+<li>功能：接收一个函数作为测试器，测试数组中的所有元素是否都符合条件，最后返回一个判断结果布尔值。</li>
+<li>语法：<code>array.every(callback[,thisArg])</code></li>
+<li>callback()的参数：currentValue,index,array</li>
+</ul>
+</li>
+<li>some()<ul>
+<li>功能：接收一个函数作为测试器，测试数组中是否有任何符合条件的元素，最后返回一个判断结果布尔值。</li>
+<li>语法：<code>array.some(callback[,thisArg])</code></li>
+<li>callback()的参数：currentValue,index,array</li>
+</ul>
+</li>
+<li>展开运算符<br>…Array，展开Array数组中的每一项到当前数组中</li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> 函数式编程 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[函数]]></title>
+        <url>http://zhangyan123.github.io/2016/09/13/%E5%87%BD%E6%95%B0/</url>
+        <content type="html"><![CDATA[<h1 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h1><ul>
+<li>函数时对象，他的不同之在于可以被调用；</li>
+<li>除了声明的形参之外，每个函数还接收两个附加的参数：this和arguments.参数this在面向对象编程中非常重要，他的值取决于调用的模式，在javascript中一共有4种函数调用模式：方法调用、函数调用、构造器调用、apply调用。</li>
+<li>函数的参数使用逗号分隔，这些参数名称将被定义为函数中的变量，它们不像普通量那样被初始化为undefined，而是在函数被调用时初始化为实际提供的参数值。</li>
+<li>函数声明的组成部分：关键字function、函数名、参数、函数体、return（如果没有显示的返回值，JS默认返回undefined）</li>
+<li>函数声明与函数表达式区别在于声明会提升，而表达式在预编译中会被跳过，只有var a =function(){//函数体}中的变量a得到了变量声明提升，a===undefined;</li>
+<li>函数的参数分为形参和实参，eg:function add(a,b){return a+b;}  中形参的个数为add.length，而使用时传入实参的个数为arguments.length，arguments是函数内建变量，它是一个承装实际参数的类数组而非真正的数组，一般为了方便使用数组的方法我们会使用var args=Array.prototype.slice.call(arguments);将类数组转换为真正的数组。</li>
+<li><p>枚举JS内建函数注意事项</p>
+<ul>
+<li>parseInt(requireArg,radix)第二个参数用于指定解析整数的进制，默认十进制，ES5之前有fix=0x||0时候易造成默认进制改变为十六或八导致的错误。ES5已经修复了八进制的默认表示法，但是使用此函数时仍需注意,不能解析为整数时返回NaN。</li>
+<li>parseFloat()只支持解析为十进制数,但parseFloat()可以识别指数型字符串parseFloat(‘1e1’)===10</li>
+<li>isNaN()确定输入值是否为可参与计算的数字，因此此函数可以用来检测parseInt()和parseFloat()返回调用成功与否。</li>
+<li>isFinite()用于检测既非Infinit又非NaN的数字</li>
+<li>URI的编码与反编码 encodeURI()/encodeURIComponent()/decodeURI()/decodeURIComponent</li>
+</ul>
+</li>
+<li><p>函数的两大特征：</p>
+<ul>
+<li>函数是对象，唯一的不同是它可以被调用；</li>
+<li>函数定义局部作用域；</li>
+</ul>
+</li>
+<li>强烈建议使用“单一var”模式在函数顶部声明函数用的局部变量，方便已近函数遍阅读到该区域所有用的变量的定义。避免变量声明提升带来的变量使用不恰当的混淆问题。</li>
+<li>将A函数作为参数传递给B函数,并由B函数来执行A(A承担B函数中的部分处理功能特别是在循环中调用同一种方法时常用回调函数节省循环次数)，此时A函数叫做B函数的回调函数。</li>
+<li>闭包实现：(将函数内部的函数暴露在全局环境中)<ul>
+<li>return inner();</li>
+<li>全局变量=inner();</li>
+</ul>
+</li>
+<li><p>使用闭包的注意事项：</p>
+<ul>
+<li>内部函数保存的是作用域本身，也不是定义函数时的快照，因此在外调用内部函数时多次调用结果可以不同；</li>
+<li>循环中使用闭包：要记住闭包记住的是变量而非定义闭包时的固定值，当调用闭包时其中的变量值为该变量最近被赋予的值；</li>
+<li>闭包可以用于访问私有变量，保证该变量的值只通过闭包进行访问，并保证在全局可以访问到此变量。</li>
+</ul>
+</li>
+<li><p>每个函数都一定有return值，没有显示返回的js自动补全为undefined，return false为终止执行，return true为执行默认操作，可以return局部变量的值（栈中的值）或者函数（闭包），但不能返回局部引用值（引用的对象存储在堆中，函数返回之后堆中对象被清理，引用值体现为无效）。</p>
+</li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> 基础 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[基本数据类型]]></title>
+        <url>http://zhangyan123.github.io/2016/09/11/%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/</url>
+        <content type="html"><![CDATA[<h1 id="基本数据类型常用技巧"><a href="#基本数据类型常用技巧" class="headerlink" title="基本数据类型常用技巧"></a>基本数据类型常用技巧</h1><ul>
+<li>5种基本数据类型 Number、String、Boolean、null、undefined剩下的都是复杂类型</li>
+<li>原生9种内建构造函数：<ul>
+<li>数据封装类对象：Number、String、Boolean、Object、Array</li>
+<li>工具类对象：Math、Date、RegExp</li>
+<li>错误类对象：error</li>
+</ul>
+</li>
+<li>使用typeof操作符可以检测数据类型，new出来的任何种类的对象都呈现为[object object]，尽量使用字面量创建方式以便检测类型</li>
+<li>3e+3=3000</li>
+<li>数字中有两个特例 NaN!==NaN  Infinity+（-Infinity）===NaN  数字%0==Infinity</li>
+<li>字符串转为数字 parseInt(“10Shjksah”)===10  简便方式：  +”10”</li>
+<li>数字转字符串 “”+123===“123”</li>
+<li>双重取反操作可以取到任何值对应的布尔值 eg:！！1===true</li>
+<li>6种falsy值：<ul>
+<li>“”</li>
+<li>null</li>
+<li>undefined</li>
+<li>0</li>
+<li>NaN</li>
+<li>false<br>除以上falsy值之外的数据都是truthy值包括对象和falsy值字符串eg:”false”===true  </li>
+</ul>
+</li>
+<li><strong>经常使用的惰性求值法：<strong><ul>
+<li>||用于检测对象是否存在若不存在赋予初始值eg:  var a = b||{}<strong>||运算符可以用来填充默认值</strong>;</li>
+<li><strong>尝试从undefined的成员属性中取值将会导致TypeError异常，这时可以通过&amp;&amp;运算符来避免错误，eg: <code>flight.equipment&amp;&amp;flight.equipment.model</code></strong>a() &amp;&amp; b() :如果执行a()后返回true，则执行b()并返回b的值,此用法与？：三元运算符经常用于简化运算步骤；如果执行a()后返回false，则整个表达式返回a()的值，b()不执行；<br>a() || b() :如果执行a()后返回true，则整个表达式返回a()的值，b()不执行；如果执行a()后返回false，则执行b()并返回b()的值；<br>&amp;&amp; 优先级高于 ||</li>
+</ul>
+</strong></strong></li>
+<li>typeof null===object ;typeof undefined===undefined</li>
+<li>数组可以用于取字符串的某位字符’123’[1]===”2”,数组其实为key值从0开始递增的对象</li>
+<li>for-in方法是为了遍历对象而设计，会遍历原型链，注意使用hasOwnProperty()  </li>
+</ul>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> 基础 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[表达式与语句]]></title>
+        <url>http://zhangyan123.github.io/2016/09/10/%E8%A1%A8%E8%BE%BE%E5%BC%8F%E4%B8%8E%E8%AF%AD%E5%8F%A5/</url>
+        <content type="html"><![CDATA[<h1 id="变量、表达式与语句"><a href="#变量、表达式与语句" class="headerlink" title="变量、表达式与语句"></a>变量、表达式与语句</h1><h2 id="变量使用"><a href="#变量使用" class="headerlink" title="变量使用"></a>变量使用</h2><ul>
+<li><code>var a ;</code> 声明（分配栈空间命名为a）。</li>
+<li>定义（也称作初始化）<code>a = 1;</code>（为声明的变量赋【值】）。  </li>
+</ul>
+<blockquote>
+<p><strong>注：</strong></p>
+<ul>
+<li>只声明未定义与未声明的变量在使用时均为undefined（JS的一种基本数据类型，JS是一段一段执行的（以script标签来分割），执行每一段之前，都有一个“预编译”，预编译干的活是：声明所有var变量（初始为undefined），解析定义式函数语句。）。</li>
+<li>最佳时间的声明语句发生在作用域（函数）最开始位置，且使用一个var及逗号分隔的一条语句，方便查看此作用域中变量也避免【变量提升】机制带来的意外事件。</li>
+<li>JS的变量名是区分大小写的，可包含字母，数字，下划线和$，但不能以数字开头。            </li>
+</ul>
+</blockquote>
+<h2 id="表达式与语句"><a href="#表达式与语句" class="headerlink" title="表达式与语句"></a>表达式与语句</h2><p>表达式中使用运算符产生结果值，多个表达式之间使用逗号分隔；语句是代码执行的最小单元组成，程序就是由一系列语句组成的代码执行块，语句之间使用分号分隔。</p>
+<blockquote>
+<p><strong>注：</strong>   </p>
+<ul>
+<li>表达式可以作为值出现在任何位置；</li>
+<li>表达式是求值运算个中变量在运行前不得而知，故在JS预编译期间不进行解释，直接跳过；语句中声明的部分是会在预编译中进行解释的，执行过程中不再理会已解释部分的语句；</li>
+<li>因为现在的JS有插入分号机制，已经不要求代码中的语句必须使用分号结尾了，为了方便区分表达式与表达式语句，JS规定，使用（）包裹以{}包裹或者以function开头的代码理解为表达式；以一元运算符，比如！或者+开头的代码被理解为表达式，与（）不之处是运算符会改变表达式结果。</li>
+</ul>
+</blockquote>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> javaScript </category>
+            
+            <category> 基础 </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> javaScript </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[markdown个人常用语法总结]]></title>
+        <url>http://zhangyan123.github.io/2016/09/01/markdown%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8%E8%AF%AD%E6%B3%95%E6%80%BB%E7%BB%93/</url>
+        <content type="html"><![CDATA[<blockquote>
+<p>为了方便写作查找，查阅文档之后总结出自己常用的markdown语法如下  </p>
+</blockquote>
+<h1 id="使用-标记标题"><a href="#使用-标记标题" class="headerlink" title="使用#标记标题"></a>使用#标记标题</h1><h2 id="无序列表"><a href="#无序列表" class="headerlink" title="无序列表"></a>无序列表</h2><ul>
+<li>星号*可以标记列表</li>
+</ul>
+<ul>
+<li>加号+也可以标记列表</li>
+</ul>
+<ul>
+<li>减号-也可以标记列表</li>
+</ul>
+<h2 id="有序列表"><a href="#有序列表" class="headerlink" title="有序列表"></a>有序列表</h2><ol>
+<li>数字接英文点号，每项后面记得加至少两个空格   </li>
+</ol>
+<blockquote>
+<p>在首行出现数字-英文句点-空白时  </p>
+<p>eg:<code>1987. </code>应写为<code>1987\.</code>以与列表格式进行区分  </p>
+</blockquote>
+<h2 id="代码及区块"><a href="#代码及区块" class="headerlink" title="代码及区块"></a>代码及区块</h2><ul>
+<li><blockquote>
+<p>>区块引用</p>
+</blockquote>
+</li>
+<li><p>分行方式为每行结尾至少两个空格键+回车键    </p>
+</li>
+<li><p>使用pre+code包裹，可以保持代码粘贴时的缩进格式   </p>
+<hr>
+<hr>
+</li>
+<li><p>如上的分割线使用<code>* * *</code>或者<code>- - -</code>单独一行制成,符号之间可以自由添加空格</p>
+</li>
+<li><code>html</code>可以直接使用tab上面的<code>`</code>包裹小段代码作为代码引用的标志，注意不要与<code>‘</code>英文单引号混淆</li>
+</ul>
+<h2 id="嵌入带连接的元素"><a href="#嵌入带连接的元素" class="headerlink" title="嵌入带连接的元素"></a>嵌入带连接的元素</h2><ul>
+<li><p><a href="https://zhangyan123.github.io/&quot;dailyblog&quot;">myBlog</a><br>以上内联链接制作方式如下<br><code>[myBlog](<a href="https://zhangyan123.github.io/&quot;dailyblog">https://zhangyan123.github.io/&quot;dailyblog</a>“)</code>支持相对路径<br>相似的图片嵌入，形式上只是在链接前面加一个感叹号!</p>
+</li>
+<li><p><img src="/images/default-1.png" alt="myBlog"><br>以上图片嵌入的制作方式如下<br><code>![myBlog](<a href="https://zhangyan123.github.io/images/default-1.png">https://zhangyan123.github.io/images/default-1.png</a>)</code></p>
+</li>
+<li>直接嵌入一个暴露的连接<a href="http://example.com" target="_blank" rel="external">http://example.com</a> 可以使用<code>&lt; <a href="http://example.com" target="_blank" rel="external">http://example.com</a> ></code>方式，同样的嵌入邮箱地址可以使用直接使用<code>&lt; address@example.com ></code>  </li>
+</ul>
+<h2 id="强调"><a href="#强调" class="headerlink" title="强调"></a>强调</h2><blockquote>
+<p>我们会发现markdown语法中<code>*</code>与<code>-</code>具有很多互通的功能，上文中提到的无序列表、分割线均如此，此处要说明的强调标记方式中易与此规律混淆，请务必分清减号-与下滑线_的适用场景。   </p>
+</blockquote>
+<ul>
+<li><code> *需要强调的文字*</code>与 <code> _需要强调的文字_</code>都可以实现<em>需要强调的文字</em>的效果，注意是下划线不是减号。  </li>
+<li><code> **需要强调的文字**</code>与 <code> __需要强调的文字__</code>都可以实现<strong>需要强调的文字</strong>的效果，再次强调是下划线不是减号。  </li>
+<li><del>删除线</del></li>
+</ul>
+<h2 id="表格"><a href="#表格" class="headerlink" title="表格"></a>表格</h2><pre><code>| 排序方法 | 平均情况 | 最好情况 | 最坏情况 | 辅助空间 | 稳定性 |//表头
+|:-----|:-----|:-----|:-----|:-----|:-----|//对齐方式|:-----|左对齐，|:-----:|居中，|-----:|右对齐
+
+| 冒泡排序 | O(n²) | O(nlogn) | O(n²) | O(1) | 稳定 |//单元格数据
+| 简单选择 | O(n²) | O(n²) | O(n²) | O(1) | 稳定 |
+| 直接插入 | O(n²) | O(n) | O(n²) | O(1) | 稳定 |
+| 希尔排序 | O(nlogn)~O(n²) | O(n^1.3) | O(n²) | O(1) | 不稳定 |
+| 堆排序 | O(nlogn) | O(nlogn) | O(nlogn) | O(1) | 不稳定 |
+| 归并排序 | O(nlogn) | O(nlogn) | O(nlogn) | O(n) | 不稳定 |
+| 快速排序 | O(nlogn) | O(nlogn) | O(n²) | O(nlogn)~O(n) | 不稳定 |</code></pre> 
+
+<table>
+<thead>
+<tr>
+<th style="text-align:left">排序方法</th>
+<th style="text-align:left">平均情况</th>
+<th style="text-align:left">最好情况</th>
+<th style="text-align:left">最坏情况</th>
+<th style="text-align:left">辅助空间</th>
+<th style="text-align:left">稳定性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">冒泡排序</td>
+<td style="text-align:left">O(n²)</td>
+<td style="text-align:left">O(nlogn)</td>
+<td style="text-align:left">O(n²)</td>
+<td style="text-align:left">O(1)</td>
+<td style="text-align:left">稳定</td>
+</tr>
+<tr>
+<td style="text-align:left">简单选择</td>
+<td style="text-align:left">O(n²)</td>
+<td style="text-align:left">O(n²)</td>
+<td style="text-align:left">O(n²)</td>
+<td style="text-align:left">O(1)</td>
+<td style="text-align:left">稳定</td>
+</tr>
+<tr>
+<td style="text-align:left">直接插入</td>
+<td style="text-align:left">O(n²)</td>
+<td style="text-align:left">O(n)</td>
+<td style="text-align:left">O(n²)</td>
+<td style="text-align:left">O(1)</td>
+<td style="text-align:left">稳定</td>
+</tr>
+<tr>
+<td style="text-align:left">希尔排序</td>
+<td style="text-align:left">O(nlogn)~O(n²)</td>
+<td style="text-align:left">O(n^1.3)</td>
+<td style="text-align:left">O(n²)</td>
+<td style="text-align:left">O(1)</td>
+<td style="text-align:left">不稳定</td>
+</tr>
+<tr>
+<td style="text-align:left">堆排序</td>
+<td style="text-align:left">O(nlogn)</td>
+<td style="text-align:left">O(nlogn)</td>
+<td style="text-align:left">O(nlogn)</td>
+<td style="text-align:left">O(1)</td>
+<td style="text-align:left">不稳定</td>
+</tr>
+<tr>
+<td style="text-align:left">归并排序</td>
+<td style="text-align:left">O(nlogn)</td>
+<td style="text-align:left">O(nlogn)</td>
+<td style="text-align:left">O(nlogn)</td>
+<td style="text-align:left">O(n)</td>
+<td style="text-align:left">不稳定</td>
+</tr>
+<tr>
+<td style="text-align:left">快速排序</td>
+<td style="text-align:left">O(nlogn)</td>
+<td style="text-align:left">O(nlogn)</td>
+<td style="text-align:left">O(n²)</td>
+<td style="text-align:left">O(nlogn)~O(n)</td>
+<td style="text-align:left">不稳定</td>
+</tr>
+</tbody>
+</table>
+<div style="color：white;background:#ccc;"><h2>备注<h2><em>markdown文档中可以直接使用html标签和css样式,你会发现写在markdown中的样式直接应用在了文档中</em></h2></h2></div> 
+]]></content>
+        
+        <categories>
+            
+            <category> 写作 </category>
+            
+            <category> markdown </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> 写作 </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    <entry>
+        <title><![CDATA[lavarel<一>环境搭建]]></title>
+        <url>http://zhangyan123.github.io/2016/08/31/laravel%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/</url>
+        <content type="html"><![CDATA[<a id="more"></a>
+<p>lavarel学习场所<a href="http://laravelacademy.org/" target="_blank" rel="external">lavarel学院</a>下载文档查看安装与配置方法</p>
+
+<ol>
+<li>安装wamp，确保php版本要大于等于5.59；</li>
+<li>安装composer，通过composer安装laravel<code>。composer global require &quot;laravel/installer&quot;</code>确保~/.composer/vendor/bin在系统路径中，否则不能在任意路径调用 laravel 命令。；</li>
+<li>安装好以上环境，可以使用git clone已有的项目到本地，将public指定为服务器的根目录，便可以在本地查看项目，并使用git分布式管理项目了。</li>
+<li>更改完服务器根目录之后，localhost页面显示缺少依赖文件，进入项目文件夹，<code>composer update</code>可以解决此问题。<br></li>
+</ol>
+]]></content>
+        
+        <categories>
+            
+            <category> 前端开发 </category>
+            
+            <category> 框架 </category>
+            
+            <category> Laravel </category>
+            
+        </categories>
+        
+        
+        <tags>
+            
+            <tag> larabel </tag>
+            
+        </tags>
+        
+    </entry>
+    
+    
+    
+</search>-->

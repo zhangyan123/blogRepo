@@ -1,0 +1,782 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>张言的博客</title>
+  <subtitle>记录前端开发学习与积累</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://zhangyan123.github.io/"/>
+  <updated>2017-08-27T09:19:54.000Z</updated>
+  <id>http://zhangyan123.github.io/</id>
+  
+  <author>
+    <name>张言</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>实现合理的跨域请求</title>
+    <link href="http://zhangyan123.github.io/2017/08/27/%E8%B7%A8%E5%9F%9F%E8%B5%84%E6%BA%90%E5%85%B1%E4%BA%AB/"/>
+    <id>http://zhangyan123.github.io/2017/08/27/跨域资源共享/</id>
+    <published>2017-08-27T08:30:00.000Z</published>
+    <updated>2017-08-27T09:19:54.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="原内容已删除，待补充与更新。。。"><a href="#原内容已删除，待补充与更新。。。" class="headerlink" title="原内容已删除，待补充与更新。。。"></a>原内容已删除，待补充与更新。。。</h1>]]></content>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;原内容已删除，待补充与更新。。。&quot;&gt;&lt;a href=&quot;#原内容已删除，待补充与更新。。。&quot; class=&quot;headerlink&quot; title=&quot;原内容已删除，待补充与更新。。。&quot;&gt;&lt;/a&gt;原内容已删除，待补充与更新。。。&lt;/h1&gt;
+    
+    </summary>
+    
+      <category term="前端开发" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="问题及解决方案" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E9%97%AE%E9%A2%98%E5%8F%8A%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/"/>
+    
+      <category term="安全问题" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E9%97%AE%E9%A2%98%E5%8F%8A%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>移动页面点击击穿问题</title>
+    <link href="http://zhangyan123.github.io/2017/08/27/%E7%A7%BB%E5%8A%A8%E9%A1%B5%E9%9D%A2%E7%82%B9%E5%87%BB%E5%87%BB%E7%A9%BF%E9%97%AE%E9%A2%98/"/>
+    <id>http://zhangyan123.github.io/2017/08/27/移动页面点击击穿问题/</id>
+    <published>2017-08-27T06:50:05.000Z</published>
+    <updated>2017-08-27T09:26:08.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>在移动端，click 事件有 300ms 的延迟，当 touchend 事件把上层元素隐藏之后，隔了300ms，浏览器触发了 click 事件，但是此时上层元素不见了，所以该事件被派发到了下层元素身上。如果下层对应的元素是一个链接，那页面就会意外地跳转，如果下层元素绑定了其他事件，此时更会有出乎意料的事情发生。</p>
+<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><p>   我们项目当中使用的antd推荐的Fastclick插件,意图解决300ms点击延迟问题，但实际开发当中，发现仍然存在点击穿透的情况（遮罩上方选择学校，遮罩消失之后对应下方的书籍卡片被意外点击，并展示了书籍中的乐谱信息。。。满眼的列表项），起初为了尽快解决问题，在遮罩下方又加了一层透明遮罩绑定click事件（点击消失）当肉盾，事后整理如下：</p>
+<ul>
+<li>fastclick使用touchend事件模拟click触发，并将真正的click事件屏蔽掉，但在某些手机上仍然存在不能屏蔽原生click事件的bug，造成点击事件触发两次的问题。</li>
+<li><p>跨页穿透问题解决方案：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">#preventClick &#123; width:100%; height:100%; position:absolute; z-index:1000; top:0; left:0; &#125;</div><div class="line">&lt;body&gt;</div><div class="line">    &lt;div id=&quot;preventClick&quot;&gt;&lt;/div&gt;</div><div class="line">&lt;/body&gt;</div><div class="line">function onDeviceReady() &#123;</div><div class="line">    setTimeout(function()&#123; $(&apos;#preventClick&apos;).hide(); &#125;, 300);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>本页穿透解决方案：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">#preventClick &#123; width:100%; height:100%; position:absolute; z-index:999; top:0; left:0; &#125;</div><div class="line">&lt;container&gt;</div><div class="line">    &lt;div class=&apos;mask&apos;&gt;&lt;/div&gt;</div><div class="line">    &lt;div id=&quot;preventClick&quot;&gt;&lt;/div&gt;</div><div class="line">&lt;/container&gt;</div><div class="line">&lt;script&gt;</div><div class="line">  document.getElementById(&apos;preventClick&apos;).onclick=function(e)&#123;</div><div class="line">    e.target.style.display=&quot;none&quot;;</div><div class="line">  &#125;;</div><div class="line">&lt;/script&gt;</div></pre></td></tr></table></figure>
+</li>
+<li><p>由于穿透事件是click延迟造成的，只要将click事件用touch或者tap（由Zepto或KISSY库提供，同样由touch模拟出来的。）</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>用户碰触移动页面之后，需要等待一段时间来判断是不是双击（double tap）动作（双击放大），而不是立即响应单击click，等待的这段时间大约是300ms，因此移动端click有300ms延迟，较好解决方法是使用touchend替换click事件，但注意在手势检测中屏蔽掉对以上模拟的影响。</p>
+<h1 id="知识点补充："><a href="#知识点补充：" class="headerlink" title="知识点补充："></a>知识点补充：</h1><ul>
+<li>pointer-events:none；由CSS3提出，不只是禁用链接hover，打开链接等效果，是真实意义上的将onlick事件去掉了，注意该样式只禁用了鼠标事件，对应的键盘事件并没有被禁用（tab选中，Enter提交等）。</li>
+<li><p>PC网页上的大部分操作都是用鼠标的，即响应的是鼠标事件，包括mousedown、mouseup、mousemove和click事件。一次点击行为，可被拆解成：mousedown -&gt; mouseup -&gt; click 三步。</p>
+</li>
+<li><p>手机上没有鼠标，所以就用触摸事件去实现类似的功能。touch事件包含touchstart、touchmove、touchend，注意手机上并没有tap事件。手指触发触摸事件的过程为：touchstart -&gt; touchmove -&gt; touchend -&gt;300ms-&gt;click。</p>
+</li>
+</ul>
+</li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;问题&quot;&gt;&lt;a href=&quot;#问题&quot; class=&quot;headerlink&quot; title=&quot;问题&quot;&gt;&lt;/a&gt;问题&lt;/h1&gt;&lt;p&gt;在移动端，click 事件有 300ms 的延迟，当 touchend 事件把上层元素隐藏之后，隔了300ms，浏览器触发了 click 事
+    
+    </summary>
+    
+      <category term="前端开发" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="问题及解决方案" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E9%97%AE%E9%A2%98%E5%8F%8A%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/"/>
+    
+      <category term="移动开发问题" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E9%97%AE%E9%A2%98%E5%8F%8A%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/%E7%A7%BB%E5%8A%A8%E5%BC%80%E5%8F%91%E9%97%AE%E9%A2%98/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>归并排序</title>
+    <link href="http://zhangyan123.github.io/2017/08/16/%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F/"/>
+    <id>http://zhangyan123.github.io/2017/08/16/归并排序/</id>
+    <published>2017-08-16T08:20:02.000Z</published>
+    <updated>2017-08-16T08:37:31.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>#步骤拆解：</p>
+<ul>
+<li>把长度为n的输入序列分成两个长度为n/2的子序列；</li>
+<li>对这两个子序列分别采用归并排序；</li>
+<li>将两个排序好的子序列合并成一个最终的排序序列。</li>
+</ul>
+<h1 id="简单实现："><a href="#简单实现：" class="headerlink" title="简单实现："></a>简单实现：</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line">function mergeSort(arr) &#123;</div><div class="line">    var len = arr.length;</div><div class="line">    if (len &lt; 2) &#123;</div><div class="line">        return arr;</div><div class="line">    &#125; </div><div class="line">    var middle = Math.floor(len / 2),</div><div class="line">        left = arr.slice(0, middle),</div><div class="line">        right = arr.slice(middle);</div><div class="line">    return merge(mergeSort(left), mergeSort(right));</div><div class="line"></div><div class="line">&#125;</div><div class="line">function merge(left, right) &#123;</div><div class="line">    var result = [];</div><div class="line">    console.time(&apos;归并排序耗时&apos;);</div><div class="line">    while (left.length &amp;&amp; right.length) &#123;</div><div class="line">        if (left[0] &lt; right[0]) &#123;</div><div class="line">            result.push(left.shift());</div><div class="line">        &#125; else &#123;</div><div class="line">            result.push(right.shift());</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    while (left.length) &#123;</div><div class="line">        result.push(left.shift());</div><div class="line">    &#125;</div><div class="line">    while (right.length) &#123;</div><div class="line">        result.push(right.shift());</div><div class="line">    &#125;</div><div class="line">    console.timeEnd(&apos;归并排序耗时&apos;);</div><div class="line">    return result;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>#小结：<br>选择排序时间复杂度为O(n^2),空间复杂度为O(1)，稳定</p>
+<h1 id="图解："><a href="#图解：" class="headerlink" title="图解："></a>图解：</h1><div style="display:inline-block;"><img src="/images/mergesort.gif" alt="myBlog"></div>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;#步骤拆解：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;把长度为n的输入序列分成两个长度为n/2的子序列；&lt;/li&gt;
+&lt;li&gt;对这两个子序列分别采用归并排序；&lt;/li&gt;
+&lt;li&gt;将两个排序好的子序列合并成一个最终的排序序列。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&quot;简单实现：&quot;&gt;&lt;a hre
+    
+    </summary>
+    
+      <category term="笔试准备" scheme="http://zhangyan123.github.io/categories/%E7%AC%94%E8%AF%95%E5%87%86%E5%A4%87/"/>
+    
+      <category term="基本算法" scheme="http://zhangyan123.github.io/categories/%E7%AC%94%E8%AF%95%E5%87%86%E5%A4%87/%E5%9F%BA%E6%9C%AC%E7%AE%97%E6%B3%95/"/>
+    
+    
+      <category term="笔试" scheme="http://zhangyan123.github.io/tags/%E7%AC%94%E8%AF%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>选择排序</title>
+    <link href="http://zhangyan123.github.io/2017/08/16/%E9%80%89%E6%8B%A9%E6%8E%92%E5%BA%8F/"/>
+    <id>http://zhangyan123.github.io/2017/08/16/选择排序/</id>
+    <published>2017-08-16T08:10:02.000Z</published>
+    <updated>2017-08-16T08:37:50.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>#步骤拆解：</p>
+<ul>
+<li>首先在未排序序列中找到最小（大）元素，存放到排序序列的起始位置，</li>
+<li>然后，再从剩余未排序元素中继续寻找最小（大）元素，然后放到已排序序列的末尾（每趟遍历起始位置向后偏移一位）。以此类推，直到所有元素均排序完毕。</li>
+<li>使用与数据规模较小的数组。</li>
+</ul>
+<h1 id="简单实现："><a href="#简单实现：" class="headerlink" title="简单实现："></a>简单实现：</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">function selectionSort(arr) &#123;</div><div class="line">    var length = arr.length;</div><div class="line">    var minindex, temp;</div><div class="line">    console.time(&apos;选择排序耗时&apos;);</div><div class="line">    for (var i = 0; i &lt; length; i++) &#123;</div><div class="line">        minindex = i;</div><div class="line">        for (var j = i + 1; j &lt; length; j++) &#123;//从未排序的子数组中找到最小数值的角标</div><div class="line">            if (arr[j] &lt; arr[minindex]) &#123;</div><div class="line">                minindex = j;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        temp= arr[minindex];//将最小数与</div><div class="line">        arr[minindex] = arr[i];</div><div class="line">        arr[i] = temp;</div><div class="line">    &#125;</div><div class="line">    console.timeEnd(&apos;选择排序耗时&apos;);</div><div class="line">    return arr;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>#小结：<br>归并排序时间复杂度为O(nlogn),空间复杂度为O(n)，不稳定</p>
+<h1 id="图解："><a href="#图解：" class="headerlink" title="图解："></a>图解：</h1><div style="display:inline-block;"><img src="/images/selectionsort.gif" alt="myBlog"></div>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;#步骤拆解：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;首先在未排序序列中找到最小（大）元素，存放到排序序列的起始位置，&lt;/li&gt;
+&lt;li&gt;然后，再从剩余未排序元素中继续寻找最小（大）元素，然后放到已排序序列的末尾（每趟遍历起始位置向后偏移一位）。以此类推，直到所有元素均排序完毕。&lt;/li
+    
+    </summary>
+    
+      <category term="笔试准备" scheme="http://zhangyan123.github.io/categories/%E7%AC%94%E8%AF%95%E5%87%86%E5%A4%87/"/>
+    
+      <category term="基本算法" scheme="http://zhangyan123.github.io/categories/%E7%AC%94%E8%AF%95%E5%87%86%E5%A4%87/%E5%9F%BA%E6%9C%AC%E7%AE%97%E6%B3%95/"/>
+    
+    
+      <category term="笔试" scheme="http://zhangyan123.github.io/tags/%E7%AC%94%E8%AF%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>插入排序</title>
+    <link href="http://zhangyan123.github.io/2017/08/16/%E6%8F%92%E5%85%A5%E6%8E%92%E5%BA%8F/"/>
+    <id>http://zhangyan123.github.io/2017/08/16/插入排序/</id>
+    <published>2017-08-16T08:00:02.000Z</published>
+    <updated>2017-08-16T08:36:35.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>#步骤拆解：</p>
+<p>插入排序的思想类似于斗地主时候一边抓牌一边插进已有牌的过程</p>
+<ol>
+<li>从第一个元素开始，该元素可以认为已经被排序；</li>
+<li>取出下一个元素，在已经排序的元素序列中从后向前扫描；</li>
+<li>如果该元素（已排序）大于新元素，将该元素移到下一位置；</li>
+<li>重复步骤3，直到找到已排序的元素小于或者等于新元素的位置；</li>
+<li>将新元素插入到该位置后；</li>
+<li>重复步骤2-5.</li>
+</ol>
+<h1 id="简单实现："><a href="#简单实现：" class="headerlink" title="简单实现："></a>简单实现：</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">function insertionSort(arr) &#123;</div><div class="line">    console.time(&apos;插入排序耗时&apos;);</div><div class="line">    for (var i = 0; i &lt; arr.length; i++) &#123;</div><div class="line">        var key = arr[i];//保存i位置的数值</div><div class="line">        for (var j = i -1; j &gt; 0; j--) &#123;//j用于确定已排序数组的末端，可见第一次赋值操作就将arr[i]覆盖掉了，因此之前的保留是必要的，此后的判断也应使用保留值</div><div class="line">            if (arr[j] &gt; key) &#123;</div><div class="line">                arr[j+1] = arr[j];</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        arr[j+1] = key;//将本轮需插入的值插入到已排序数组中</div><div class="line">    &#125;</div><div class="line">    console.timeEnd(&apos;插入排序耗时&apos;);</div><div class="line">    return arr;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>#小结：<br>插入排序时间复杂度为O(n)-O(n^2),空间复杂度为O(1),稳定</p>
+<h1 id="图解："><a href="#图解：" class="headerlink" title="图解："></a>图解：</h1><div style="display:inline-block;"><img src="/images/insertionsort.gif" alt="myBlog"></div>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;#步骤拆解：&lt;/p&gt;
+&lt;p&gt;插入排序的思想类似于斗地主时候一边抓牌一边插进已有牌的过程&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;从第一个元素开始，该元素可以认为已经被排序；&lt;/li&gt;
+&lt;li&gt;取出下一个元素，在已经排序的元素序列中从后向前扫描；&lt;/li&gt;
+&lt;li&gt;如果该元素（已排序）大于
+    
+    </summary>
+    
+      <category term="笔试准备" scheme="http://zhangyan123.github.io/categories/%E7%AC%94%E8%AF%95%E5%87%86%E5%A4%87/"/>
+    
+      <category term="基本算法" scheme="http://zhangyan123.github.io/categories/%E7%AC%94%E8%AF%95%E5%87%86%E5%A4%87/%E5%9F%BA%E6%9C%AC%E7%AE%97%E6%B3%95/"/>
+    
+    
+      <category term="笔试" scheme="http://zhangyan123.github.io/tags/%E7%AC%94%E8%AF%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>冒泡排序</title>
+    <link href="http://zhangyan123.github.io/2017/08/16/%E5%86%92%E6%B3%A1%E6%8E%92%E5%BA%8F/"/>
+    <id>http://zhangyan123.github.io/2017/08/16/冒泡排序/</id>
+    <published>2017-08-16T07:50:01.000Z</published>
+    <updated>2017-08-16T08:36:34.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>#步骤拆解：</p>
+<ul>
+<li>比较相邻的元素。如果第一个比第二个大，就交换它们两个；</li>
+<li>对每一对相邻元素作同样的工作，从开始第一对到未完成排序的最后一对，这样在数组的顶部自动生成一个不断加长的有序数列；</li>
+<li>针对所有的元素重复以上的步骤，除了最后一个；</li>
+<li>重复1-3步，直到排序完成。</li>
+</ul>
+<h1 id="简单实现："><a href="#简单实现：" class="headerlink" title="简单实现："></a>简单实现：</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">function bubbleSort(arr)&#123;</div><div class="line">    var i = arr.length-1;//需要遍历的元素是从第一个到倒数第二个，因为每次比较的是arr[i]与arr[i+1]</div><div class="line">    console.time(&apos;冒泡排序&apos;);</div><div class="line">    while(i&gt;0)&#123;</div><div class="line">        var pos = 0;//每次遍历重新计算最后交换数据的位置</div><div class="line">        for(var j=0;j&lt;i;j++)&#123;</div><div class="line">            if(arr[j]&gt;arr[j+1])&#123;</div><div class="line">                pos =j;</div><div class="line">                arr[j]^=arr[j+1];//亦或可以交换两个不同值的变量的值，如果值相同交换后变成0，需要格外小心。</div><div class="line">                arr[j+1]^=arr[j];</div><div class="line">                arr[j]^=arr[j+1];</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        i=pos;//每次遍历后将下次遍历的终点设置为数组顶部有序数列的开始位置（有序数列不参与下次遍历和交换）</div><div class="line">    &#125;</div><div class="line">     console.timeEnd(&apos;冒泡排序&apos;);   </div><div class="line">    return arr;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>#小结：<br>冒泡排序时间复杂度为O(n)-O(n^2),空间复杂度为O(1),稳定</p>
+<h1 id="图解："><a href="#图解：" class="headerlink" title="图解："></a>图解：</h1><div style="display:inline-block;"><img src="/images/bubblesort.gif" alt="myBlog"></div>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;#步骤拆解：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;比较相邻的元素。如果第一个比第二个大，就交换它们两个；&lt;/li&gt;
+&lt;li&gt;对每一对相邻元素作同样的工作，从开始第一对到未完成排序的最后一对，这样在数组的顶部自动生成一个不断加长的有序数列；&lt;/li&gt;
+&lt;li&gt;针对所有的元素重复以上的步
+    
+    </summary>
+    
+      <category term="笔试准备" scheme="http://zhangyan123.github.io/categories/%E7%AC%94%E8%AF%95%E5%87%86%E5%A4%87/"/>
+    
+      <category term="基本算法" scheme="http://zhangyan123.github.io/categories/%E7%AC%94%E8%AF%95%E5%87%86%E5%A4%87/%E5%9F%BA%E6%9C%AC%E7%AE%97%E6%B3%95/"/>
+    
+    
+      <category term="笔试" scheme="http://zhangyan123.github.io/tags/%E7%AC%94%E8%AF%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>快速排序</title>
+    <link href="http://zhangyan123.github.io/2017/08/11/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F/"/>
+    <id>http://zhangyan123.github.io/2017/08/11/快速排序/</id>
+    <published>2017-08-11T07:50:05.000Z</published>
+    <updated>2017-08-16T08:36:25.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="简单实现："><a href="#简单实现：" class="headerlink" title="简单实现："></a>简单实现：</h1><p>注：快排的时间复杂度为O(nlgn)~O(n^2) ,由于使用递归调用栈空间复杂度为O(lgn),快排中相等数值排序之后前后位置可能发生变化，因此为非稳定排序。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">function quicksort(arr) &#123;</div><div class="line">    if (arr.length &lt;= 1) &#123;</div><div class="line">        return arr;</div><div class="line">    &#125; else &#123;</div><div class="line">        var key = Math.floor(arr.length / 2), left = [], right = [];</div><div class="line">        var key = arr.splice(key, 1)[0];</div><div class="line">        for (var i = 0; i &lt; arr.length; i++) &#123;</div><div class="line">            if (arr[i] &lt; key) &#123;</div><div class="line">                left.push(arr[i]);</div><div class="line">            &#125; else &#123;</div><div class="line">                right.push(arr[i]);</div><div class="line">            &#125;</div><div class="line"></div><div class="line">        &#125;</div><div class="line">        return quicksort(left).concat([key], quicksort(right));</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h1 id="小结："><a href="#小结：" class="headerlink" title="小结："></a>小结：</h1><p>它是图灵奖得主C. A. R. Hoare（1934–）于1960时提出来的。<br>排序的思路分为三步：  </p>
+<ul>
+<li>选择基准值；</li>
+<li>遍历整个数组，小于基准值的数放在基准左边，否则放在基准右边；</li>
+<li>左右两边的子集进一步分别进行以上两步，直到所有子集数组中只有一个数字为止。  </li>
+</ul>
+<p>上例中为方便起见选取了数据的中间值为基准，下图为网上下载图片，可见到基准值从左到右依次选择，个人还是觉得选择中间值更具有普遍意义，更易理解。</p>
+<h1 id="图解："><a href="#图解：" class="headerlink" title="图解："></a>图解：</h1><div style="display:inline-block;"><img src="/images/quicksort.gif" alt="myBlog"></div>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;简单实现：&quot;&gt;&lt;a href=&quot;#简单实现：&quot; class=&quot;headerlink&quot; title=&quot;简单实现：&quot;&gt;&lt;/a&gt;简单实现：&lt;/h1&gt;&lt;p&gt;注：快排的时间复杂度为O(nlgn)~O(n^2) ,由于使用递归调用栈空间复杂度为O(lgn),快排中相等数值排序
+    
+    </summary>
+    
+      <category term="笔试准备" scheme="http://zhangyan123.github.io/categories/%E7%AC%94%E8%AF%95%E5%87%86%E5%A4%87/"/>
+    
+      <category term="基本算法" scheme="http://zhangyan123.github.io/categories/%E7%AC%94%E8%AF%95%E5%87%86%E5%A4%87/%E5%9F%BA%E6%9C%AC%E7%AE%97%E6%B3%95/"/>
+    
+    
+      <category term="笔试" scheme="http://zhangyan123.github.io/tags/%E7%AC%94%E8%AF%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Redux使用篇</title>
+    <link href="http://zhangyan123.github.io/2017/08/02/%E7%90%86%E8%A7%A3redux%E8%A1%8C%E4%B8%BA%EF%BC%88%E4%B8%80%EF%BC%89/"/>
+    <id>http://zhangyan123.github.io/2017/08/02/理解redux行为（一）/</id>
+    <published>2017-08-02T08:50:05.000Z</published>
+    <updated>2017-08-16T09:03:43.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>为了方便在问题中总结提升，特辟【问题与解决】类目，惟愿从哪里跌倒，就不再摔进去。</p>
+<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><ul>
+<li>reducer函数中判断分支复杂不易管理与阅读</li>
+<li>创建store时传入一个reducer意味着每一个reducer都需要一个store管理数据，后期store维护相当混乱<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1></li>
+<li>通过combineReducers将多个reducer合并成一个rootReducer，从而创建唯一的store管理众多action请求</li>
+<li>将一种类型的actionCreators（eq:用户登录状态login、logout）放在一个文件当中，导出集合</li>
+<li>将每一份actionCreators 文件对应的处理函数封装在Handlers对象里，触发action时检测action.type符合Handlers中的哪一项，便执行对应的函数体。</li>
+</ul>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>  以上解决方案在项目中得到了实践，还包括异步注入reducer等方案，为全局状态管理提供了清晰的思路，后续文章逐项具体讲解（记得带图）。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;为了方便在问题中总结提升，特辟【问题与解决】类目，惟愿从哪里跌倒，就不再摔进去。&lt;/p&gt;
+&lt;h1 id=&quot;问题&quot;&gt;&lt;a href=&quot;#问题&quot; class=&quot;headerlink&quot; title=&quot;问题&quot;&gt;&lt;/a&gt;问题&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;reducer函数中判断分支复杂
+    
+    </summary>
+    
+      <category term="前端开发" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="问题及解决方案" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E9%97%AE%E9%A2%98%E5%8F%8A%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/"/>
+    
+      <category term="React使用" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E9%97%AE%E9%A2%98%E5%8F%8A%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/React%E4%BD%BF%E7%94%A8/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>闭包应用场景</title>
+    <link href="http://zhangyan123.github.io/2017/03/10/%E9%97%AD%E5%8C%85%E5%BA%94%E7%94%A8%EF%BC%881%EF%BC%89/"/>
+    <id>http://zhangyan123.github.io/2017/03/10/闭包应用（1）/</id>
+    <published>2017-03-10T08:46:04.000Z</published>
+    <updated>2017-08-16T09:09:17.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="JS闭包在开发实战中的应用"><a href="#JS闭包在开发实战中的应用" class="headerlink" title="JS闭包在开发实战中的应用"></a>JS闭包在开发实战中的应用</h1><p>函数内创建内部函数并将内部函数赋值给外部变量情况(没有被返回的内部函数[[Scopes]]同样指向外层函数的作用域链，单独说闭包时为因为其强大的灵活性)，外层函数执行结束后外部变量所指向的函数对象[[Scopes]]属性中包含了外部函数中执行产生的局部值。须知道函数的作用域实在创建时候确定的，this值是在运行时候才确定的。<br>都说闭包如此灵活，强大，我想知道它究竟有什么用处</p>
+<ul>
+<li>对象的构建<br>为对象设置私有变量、私有方法（在构造函数上建特权方法访问局部变量）或静态变量和方法(在原型上建公有特权方法访问构造函数上的局部变量)</li>
+<li>事件的回调函数<br>在回调函数中仍然可以访问到外层同步函数中的参数，变量或函数</li>
+<li>偏函数（柯里化）<br><code>add =  num1=&gt; num2=&gt; num1+num2;</code></li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;JS闭包在开发实战中的应用&quot;&gt;&lt;a href=&quot;#JS闭包在开发实战中的应用&quot; class=&quot;headerlink&quot; title=&quot;JS闭包在开发实战中的应用&quot;&gt;&lt;/a&gt;JS闭包在开发实战中的应用&lt;/h1&gt;&lt;p&gt;函数内创建内部函数并将内部函数赋值给外部变量情况(没
+    
+    </summary>
+    
+      <category term="前端开发" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/javaScript/"/>
+    
+      <category term="闭包" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/javaScript/%E9%97%AD%E5%8C%85/"/>
+    
+    
+      <category term="执行环境与作用域" scheme="http://zhangyan123.github.io/tags/%E6%89%A7%E8%A1%8C%E7%8E%AF%E5%A2%83%E4%B8%8E%E4%BD%9C%E7%94%A8%E5%9F%9F/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>浅析 XMLHttPRequest API与Fetch API</title>
+    <link href="http://zhangyan123.github.io/2016/11/01/%E6%B5%85%E6%9E%90XHR%E4%B8%8EFetch/"/>
+    <id>http://zhangyan123.github.io/2016/11/01/浅析XHR与Fetch/</id>
+    <published>2016-11-01T08:46:00.000Z</published>
+    <updated>2017-05-11T13:18:57.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="WHAT"><a href="#WHAT" class="headerlink" title="WHAT"></a>WHAT</h1><p>  XMLHttpRequest与Fetch是两个实现客户端与服务器之间实现数据通信的API（由浏览器提供），他们以这样的顺序排放体现了js异步通信的进化。总之，就是两个发<strong>异步请求</strong>的工具。</p>
+<ul>
+<li>我们知道Ajax的出现更新了世人对js编程本领的认知，js不再是只会弹框而惹人厌小角色，网页局部更新的实现令前端工程师振奋，哪里要变点哪里，so easy!</li>
+<li>以往我们谈及Ajax使用的API都是XMLHttpRequest，这是一个以XML开头的单词，但是传输的格式不止于XML,目前使用较多的是JSON，HTML,或纯文本。</li>
+<li>IE5，IE6没有在他们的脚本语言中定义XMLHttpRequest对象的标识符，当时IE5，IE6发布时，XMLHttpRequest标识符本身还不是一个标准。如果XMLHttpRequest标识符不存在，通过对象检测可以获得向后兼容性。微软在2006年发布的IE7时，定义了XMLHttpRequest对象标识符。</li>
+<li>随着跨浏览器JS库(例如jQuery)流行，开发者再调用XMLHttpRequest功能时不用再直接接触底层API。</li>
+<li>先来看看直接使用XHR对象发请求的示例</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line">var xmlhttp,</div><div class="line"> data=new FormData();</div><div class="line"> data.append(&apos;mail&apos;,&apos;15527216125@163.com&apos;);</div><div class="line"> data.append(&apos;password&apos;,&apos;123456&apos;)</div><div class="line"></div><div class="line">if (window.XMLHttpRequest) &#123;</div><div class="line">    xmlhttp = new XMLHttpRequest();</div><div class="line">   </div><div class="line">&#125;else if(window.ActiveXObject)&#123;</div><div class="line"> var versions=[</div><div class="line">   &apos;MSXML2.XMLHTTP.3.0&apos;,</div><div class="line">   &apos;MSXML2.XMLHTTP&apos;,</div><div class="line">   &apos;Microsoft.XMLHTTP&apos;</div><div class="line"> ];</div><div class="line"> for(var i=0;i&lt; versions.length;i++)&#123;</div><div class="line">     try&#123;</div><div class="line">       xmlhttp=new ActiveXobject(versions[i]);</div><div class="line">       break;</div><div class="line">     &#125;catch(e)&#123;&#125;</div><div class="line">   &#125;</div><div class="line"></div><div class="line">&#125;</div><div class="line"> xmlhttp.onreadystatechange = function () &#123;</div><div class="line">    if ( xmlhttp.readyState == 4 &amp;&amp; xmlhttp.status == 200 ) &#123;</div><div class="line">      console.log(JSON.parse(xmlhttp.responseText);</div><div class="line">　　　　&#125;</div><div class="line">&#125;;</div><div class="line">    xmlhttp.open(&quot;post&quot;, &apos;/login&apos; , false);    //初始化XHR对象，readystate=1</div><div class="line">    xmlhttp.send(data);    //参数用于传输data readystate=2</div><div class="line">   // xmlhttp.abort();  //停止请求，用于多次连续点击处理及时禁止回调</div><div class="line"></div><div class="line">XHR2简易写法（不含兼容性检测）</div><div class="line">var xhr = new XMLHttpRequest();</div><div class="line">xhr.open(&apos;post&apos;, &apos;/login&apos;);</div><div class="line">xhr.responseType = &apos;json&apos;;</div><div class="line"></div><div class="line">xhr.onload = function() &#123;</div><div class="line">  console.log(xhr.response);</div><div class="line">&#125;;</div><div class="line"></div><div class="line">xhr.onerror = function() &#123;</div><div class="line">  console.log(&quot;Booo&quot;);</div><div class="line">&#125;;</div><div class="line"></div><div class="line">xhr.send(data);</div></pre></td></tr></table></figure>
+<p>封装之后：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div></pre></td><td class="code"><pre><div class="line">    function request(url,message,callback())&#123;</div><div class="line">     var versions=[</div><div class="line">       &apos;MSXML2.XMLHTTP.3.0&apos;,</div><div class="line">       &apos;MSXML2.XMLHTTP&apos;,</div><div class="line">       &apos;Microsoft.XMLHTTP&apos;</div><div class="line">     ];</div><div class="line">     var xhr;</div><div class="line">     if(XHRHttpRequest)&#123;</div><div class="line">       xhr=new XMLHttpRequest();</div><div class="line">     &#125;else&#123;</div><div class="line">       for(var i=0;i&lt; versions.length;i++)&#123;</div><div class="line">         try&#123;</div><div class="line">           xhr=new ActiveXobject(versions[i]);</div><div class="line">           break;</div><div class="line">         &#125;catch(e)&#123;&#125;</div><div class="line">       &#125;</div><div class="line">     &#125;</div><div class="line">     xhr.onreadystatechange = (function(myxhr)&#123;</div><div class="line">        return function()&#123;</div><div class="line">          if(myxhr.readyState ====4 &amp;&amp; myxhr.status ===200)&#123;</div><div class="line">            callback(xhr);</div><div class="line">          &#125;</div><div class="line">        &#125;</div><div class="line">     &#125;)(xhr);</div><div class="line">     xhr.open(&apos;post&apos;,url,true);//true代表了异步请求</div><div class="line">     xhr.send(message);</div><div class="line">   &#125;</div><div class="line"></div><div class="line">jQuery：</div><div class="line"></div><div class="line">$.ajax(&#123;</div><div class="line">  url: &apos;/login&apos;,</div><div class="line">  method: &apos;post&apos;,</div><div class="line">  data:&#123;mail:&apos;15527216125@163.com&apos;,password:&apos;123456&apos;&#125;,</div><div class="line">  success:function(res)&#123;console.log(res)&#125;</div><div class="line">  </div><div class="line">&#125;);</div><div class="line">   </div><div class="line">fetch: </div><div class="line"></div><div class="line">fetch(&apos;/login&apos;,&#123;method:&apos;post&apos;,body:data&#125;)    //返回一个promise对象  返回的response对象需要使用response对象的方法转化为JSON对象或者text等类型供使用</div><div class="line">                                        .then(function(res)&#123;return res.text()&#125;)//同样返回一个promise，实现链式调用</div><div class="line">                                        .then(function(res2)&#123;console.log(res2)&#125;);</div></pre></td></tr></table></figure>
+<p>以上简单介绍了一个简单的异步请求。    </p>
+<h1 id="WHY"><a href="#WHY" class="headerlink" title="WHY"></a>WHY</h1><p>通过前面的演示我们看到发送一个异步请求有很多方式，那么为什么非要用fetch取代XHR呢？多大仇？<br>不想说起promise的，但是不讲Promise就讲不下去了。。。<br>promise的出现是为了解决<strong>回调地狱</strong><br>简化~<br>思考：假如func3执行的条件是func1和func2均执行完毕，其中func1和fun2均是异步请求，异步请求不确定什么时候结束。。。要么就定个定时器循环检测全局flag是否赋值，要么就是放进回调耦合在一起。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">(func1()&#123;   //纯纯的伪代码</div><div class="line">    $.ajax(&#123;</div><div class="line">      //...</div><div class="line">      success:function()&#123;</div><div class="line">//fun2</div><div class="line">      $.ajax(&#123;</div><div class="line">        //...</div><div class="line">        success:function()&#123;</div><div class="line">          func3;</div><div class="line">        &#125;</div><div class="line">      &#125;);</div><div class="line">      &#125;</div><div class="line">    &#125;)</div><div class="line">&#125;)();</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">fetch(...).then(fun2)</div><div class="line">          .then(fun3)//各依赖有序执行</div></pre></td></tr></table></figure>
+<h1 id="HOW"><a href="#HOW" class="headerlink" title="HOW"></a>HOW</h1><p>参考：    </p>
+<ul>
+<li><a href="http://es6.ruanyifeng.com/#docs/promise#Promise-prototype-then" target="_blank" rel="external">promise</a></li>
+<li><a href="http://es6.ruanyifeng.com/#docs/generator-async" target="_blank" rel="external">generator-async</a></li>
+<li><a href="https://jakearchibald.com/2015/thats-so-fetch/" target="_blank" rel="external">Fetch</a></li>
+</ul>
+<h1 id="问题："><a href="#问题：" class="headerlink" title="问题："></a>问题：</h1><ul>
+<li>使用标准的ES6 Promise你无法收集进入信息或中断请求。</li>
+<li>使用XMLHttpRequest你可以模拟进度（监听progress事件），也可以取消请求（使用abort()方法）。 但是，如果有必要你也可以使用Promise来包裹它。</li>
+<li>目前Chrome 42+, Opera 29+, 和Firefox 39+都支持Fetch。微软也考虑在未来的版本中支持Fetch。 讽刺的是，当IE浏览器终于微响应实现了progress事件的时候，XMLHttpRequest也走到了尽头。 目前，如果你需要支持IE的话，你需要使用一个<a href="https://github.com/github/fetch" target="_blank" rel="external">polyfill</a>库。</li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;WHAT&quot;&gt;&lt;a href=&quot;#WHAT&quot; class=&quot;headerlink&quot; title=&quot;WHAT&quot;&gt;&lt;/a&gt;WHAT&lt;/h1&gt;&lt;p&gt;  XMLHttpRequest与Fetch是两个实现客户端与服务器之间实现数据通信的API（由浏览器提供），他们以这样的顺
+    
+    </summary>
+    
+      <category term="前端开发" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/javaScript/"/>
+    
+      <category term="异步编程" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/javaScript/%E5%BC%82%E6%AD%A5%E7%BC%96%E7%A8%8B/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>ES6声明声明变量的六种方法</title>
+    <link href="http://zhangyan123.github.io/2016/10/22/ES6%E5%8F%98%E9%87%8F%E5%A3%B0%E6%98%8E/"/>
+    <id>http://zhangyan123.github.io/2016/10/22/ES6变量声明/</id>
+    <published>2016-10-22T06:30:01.000Z</published>
+    <updated>2017-08-16T09:10:28.000Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="变量声明大法"><a href="#变量声明大法" class="headerlink" title="变量声明大法"></a>变量声明大法</h2><p>ES5中只有两种声明变量的方法：var命令和function命令<br>ES6中增加四种特别的声明方式：    </p>
+<ul>
+<li>let：声明的变量作用域在最近的代码块中，在作用域中不能重复声明同一个变量名，let变量不提升，先声明后使用，声明的全局变量不属于head对象；</li>
+<li>const：声明一个常量，不可重复声明同一个变量名，变量不提升，先声明后使用，声明的全局变量不属于head对象；</li>
+<li>import：</li>
+<li>class：，声明的全局变量不属于head对象。</li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;变量声明大法&quot;&gt;&lt;a href=&quot;#变量声明大法&quot; class=&quot;headerlink&quot; title=&quot;变量声明大法&quot;&gt;&lt;/a&gt;变量声明大法&lt;/h2&gt;&lt;p&gt;ES5中只有两种声明变量的方法：var命令和function命令&lt;br&gt;ES6中增加四种特别的声明方式：  
+    
+    </summary>
+    
+      <category term="前端开发" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/javaScript/"/>
+    
+      <category term="ES6" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/javaScript/ES6/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>初识Promise</title>
+    <link href="http://zhangyan123.github.io/2016/10/22/%E5%88%9D%E8%AF%86Promise/"/>
+    <id>http://zhangyan123.github.io/2016/10/22/初识Promise/</id>
+    <published>2016-10-22T04:30:00.000Z</published>
+    <updated>2017-07-22T03:29:39.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>功能：Promise是处理异步的优秀方案，它不仅可以通过链式操作帮助我们拜托回调地狱，还可以在链式操作中的任何时刻捕获异常。<br>promise支持链式调用：<br><img src="/images/promisePatern.png" alt="promise"></p>
+<p>举例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">// 同步resolve</div><div class="line">var promise1 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        resolve(&quot;this is promise1 resolve&quot;);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">    &#125;,</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>var promise = 这部分可以无视，我仅仅用于代码里标记一下demo的次序。这个例子体现了最基础用法，给resolve传入一个字符串终结当前的Promise的状态，因为Promise被终结，因此该字符串会被回调给then中的(msg) =&gt; {…}函数，从而实现串联。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">// 同步reject</div><div class="line">var promise2 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        reject(&quot;this is promise2 reject&quot;);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">    &#125;,</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>和上个例子差不多，只是调用了reject，这样会回调(err) =&gt; {….}。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">// 同步catch</div><div class="line">var promise3 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        reject(&quot;this is promise3 reject catch&quot;);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">    &#125;</div><div class="line">).catch(</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>如果我没有在then()里提供reject的回调函数，那么这个reject事件会继续向后移动，直到遇到catch会被处理。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">// 异步resolve</div><div class="line">var promise4 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        var promise4_1 = new Promise(</div><div class="line">            (resolve, reject) =&gt; &#123;</div><div class="line">                console.log(&quot;promise4_1 starts&quot;);</div><div class="line">                setTimeout(</div><div class="line">                    () =&gt; &#123;</div><div class="line">                        resolve(&quot;this is promise4_1 resolve&quot;);</div><div class="line">                    &#125;,</div><div class="line">                    2000</div><div class="line">                );</div><div class="line">            &#125;</div><div class="line">        );</div><div class="line">        resolve(promise4_1);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">    &#125;,</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>这里，我故意营造了一个resolve(Promise Object)的例子（也就是promise4_1），这样的话then()会等到这个Promise Object自身的异步流程处理结束后再回调，这相当于为promise4异步流程节外生枝了promise4_1，等枝叶长成后再回到promise4主干继续向后链式处理。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div></pre></td><td class="code"><pre><div class="line">// 链式resolve</div><div class="line">var promise5 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        var promise4_1 = new Promise(</div><div class="line">            (resolve, reject) =&gt; &#123;</div><div class="line">                console.log(&quot;promise5_1 starts&quot;);</div><div class="line">                setTimeout(</div><div class="line">                    () =&gt; &#123;</div><div class="line">                        resolve(&quot;this is promise5_1 resolve&quot;);</div><div class="line">                    &#125;,</div><div class="line">                    2000</div><div class="line">                );</div><div class="line">            &#125;</div><div class="line">        );</div><div class="line">        resolve(promise4_1);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">        var promise5_2 =  new Promise(</div><div class="line">            (resolve, reject) =&gt; &#123;</div><div class="line">                console.log(&quot;promise5_2 starts&quot;);</div><div class="line">                setTimeout(</div><div class="line">                    () =&gt; &#123;</div><div class="line">                        resolve(&quot;this is promise5_2 resolve&quot;);</div><div class="line">                    &#125;,</div><div class="line">                    2000</div><div class="line">                );</div><div class="line">            &#125;</div><div class="line">        );</div><div class="line">        return promise5_2;</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">        throw new Error();</div><div class="line">    &#125;</div><div class="line">).catch(</div><div class="line">    () =&gt; &#123;</div><div class="line">        console.log(&quot;exception catched after promise5_2 resolved&quot;);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>这个例子变得再复杂一些，除了在promise5中节外生枝promise5_1异步处理2秒，在2秒后回到主干后的.then()环节，我通过return返回一个Promise对象再次节外生枝promise5_2异步执行2秒，之后再次回到主干的.then()打印出消息并且抛出了异常，最终由catch捕获。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line">// 并行+链式promise</div><div class="line">var promise6 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        var promiseArr = [];</div><div class="line">        for (var i = 0; i &lt; 5; ++i) &#123;</div><div class="line">            promiseArr.push(new Promise(</div><div class="line">                (resolve, reject) =&gt; &#123;</div><div class="line">                    console.log(`promise6_$&#123;i&#125; starts`);</div><div class="line">                    ((index) =&gt; &#123; // 闭包处理i</div><div class="line">                        setTimeout(</div><div class="line">                            () =&gt; &#123;</div><div class="line">                                console.log(`before promise6_$&#123;index&#125; resolved`);</div><div class="line">                                resolve(`this is promise6_$&#123;index&#125; resolve`);</div><div class="line">                            &#125;,</div><div class="line">                            index * 1000</div><div class="line">                        );</div><div class="line">                    &#125;)(i);</div><div class="line">                &#125;</div><div class="line">            ));</div><div class="line">        &#125;</div><div class="line">        resolve(Promise.all(promiseArr));</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msgArr) =&gt; &#123;</div><div class="line">        console.log(`promise6 all resolved $&#123;msgArr&#125;`);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>这个例子主要是体验Promise.all()，这个函数其实创建返回了一个Promise对象，内部管理与并发了多个Promise流程（节外生枝了N个树叉），它等待它们全部完成或者任意失败之后会终结自己，在外层通过resolve将Promise.all()返回的集合式Promise对象串联（托管）起来，最终进入下一个then从而可以访问N个树叉的结果集合。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line">// .then()隐式包装resolved Promise</div><div class="line">var promise7 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        var promise7_1 = new Promise(</div><div class="line">            (resolve, reject) =&gt; &#123;</div><div class="line">                console.log(&quot;promise7_1 starts&quot;);</div><div class="line">                setTimeout(</div><div class="line">                    () =&gt; &#123;</div><div class="line">                        resolve(&quot;this is promise7_1 resolve&quot;);</div><div class="line">                    &#125;,</div><div class="line">                    2000</div><div class="line">                );</div><div class="line">            &#125;</div><div class="line">        );</div><div class="line">        resolve(promise7_1);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">        return &quot;promise7 .then()隐式包装resolved Promise&quot;;</div><div class="line">    &#125;,</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (word) =&gt; &#123;</div><div class="line">        console.log(word);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>这个例子除了节外生枝外，主要关注在于第1个.then()中return了一个字符串，它实际被隐式的包装成了一个resolved状态的Promise对象返回（这是我想强调的重点），从而继续链式的调用第2个.then()的(word) =&gt; {…}回调函数。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line">// .then()显式包装resolved Promise</div><div class="line">var promise8 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        var promise8_1 = new Promise(</div><div class="line">            (resolve, reject) =&gt; &#123;</div><div class="line">                console.log(&quot;promise8_1 starts&quot;);</div><div class="line">                setTimeout(</div><div class="line">                    () =&gt; &#123;</div><div class="line">                        resolve(&quot;this is promise8_1 resolve&quot;);</div><div class="line">                    &#125;,</div><div class="line">                    2000</div><div class="line">                );</div><div class="line">            &#125;</div><div class="line">        );</div><div class="line">        resolve(promise8_1);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">        return Promise.resolve(&quot;promise8 .then()显式包装resolved Promise&quot;);</div><div class="line">    &#125;,</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (word) =&gt; &#123;</div><div class="line">        console.log(word);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>这个例子和上一个例子等价，这里体现了第1个.then()显式调用Promise.resolve返回一个Promise对象，从而第2个.then()回调(word) =&gt; {}。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line">// .then()显式包装rejected Promise</div><div class="line">var promise9 = new Promise(</div><div class="line">    (resolve, reject) =&gt; &#123;</div><div class="line">        var promise9_1 = new Promise(</div><div class="line">            (resolve, reject) =&gt; &#123;</div><div class="line">                console.log(&quot;promise9_1 starts&quot;);</div><div class="line">                setTimeout(</div><div class="line">                    () =&gt; &#123;</div><div class="line">                        resolve(&quot;this is promise9_1 resolve&quot;);</div><div class="line">                    &#125;,</div><div class="line">                    2000</div><div class="line">                );</div><div class="line">            &#125;</div><div class="line">        );</div><div class="line">        resolve(promise9_1);</div><div class="line">    &#125;</div><div class="line">).then(</div><div class="line">    (msg) =&gt; &#123;</div><div class="line">        console.log(msg);</div><div class="line">        return Promise.reject(&quot;promise9 .then()显式包装rejected Promise&quot;);</div><div class="line">    &#125;,</div><div class="line">    (err) =&gt; &#123;</div><div class="line">        console.log(err);</div><div class="line">    &#125;</div><div class="line">).catch(</div><div class="line">    (word) =&gt; &#123;</div><div class="line">        console.log(word);</div><div class="line">    &#125;</div><div class="line">);</div></pre></td></tr></table></figure></p>
+<p>这个例子和上面2个例子相反，我在第1个.then()显式的返回了一个rejected的Promise对象，这是通过Promise.reject包装字符串而成的，因此catch将被调用。</p>
+<p>通过最后3个例子，我们应该可以明确的感受到Promise围绕pending,resolved,rejected三个状态实现的异步状态驱动以及串联/并行调用的触发动机与原理。</p>
+<p>关于Promise本身的功能就了解这么多，希望后面有机会在React下多多使用，解决一些并发ajax以及串联ajax的异步需求，关键还是找到应用场景进行合理的套用，这是我认为最难的地方。</p>
+<p>另外，需要记住Promise是ES6的产物，而未来ES7提出了async/await关键字将对Promise加以利用进一步简化异步编程，它将更接近于协程的理念，更加符合人类的思考习惯，至少我是这么认为的。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;功能：Promise是处理异步的优秀方案，它不仅可以通过链式操作帮助我们拜托回调地狱，还可以在链式操作中的任何时刻捕获异常。&lt;br&gt;promise支持链式调用：&lt;br&gt;&lt;img src=&quot;/images/promisePatern.png&quot; alt=&quot;promise&quot;&gt;&lt;/
+    
+    </summary>
+    
+      <category term="前端开发" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/javaScript/"/>
+    
+      <category term="ES6" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/javaScript/ES6/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>常见pollyfills</title>
+    <link href="http://zhangyan123.github.io/2016/10/20/%E5%B8%B8%E8%A7%81pollyfills/"/>
+    <id>http://zhangyan123.github.io/2016/10/20/常见pollyfills/</id>
+    <published>2016-10-20T08:30:09.000Z</published>
+    <updated>2017-08-16T09:09:34.000Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="常见内建对象扩展项"><a href="#常见内建对象扩展项" class="headerlink" title="常见内建对象扩展项"></a>常见内建对象扩展项</h2><blockquote>
+<p>讨论：基于相关内建原型来增加自定义方法这种技术，最常用且最能被接受的例子，是实现让老式浏览器支持新功能，而且应该是已经被ECMAScript委员会标准化了的，为现代浏览器所实现的新功能，例如让老版IE支持ES5中的方法，这种扩展叫做shims或者pollyfills.<br><strong>注：</strong>使用自定义方法扩展内建对象原型时，一定要检查该方法是否已经存在，不存在情况下才扩展此方法。<br>下面罗列几个常见pollyfills：    </p>
+<ul>
+<li>trim()<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">if(typeof String.prototype.trim !==&apos;function&apos;)&#123;</div><div class="line">  String.prototype.trim = function()&#123;</div><div class="line">    return this.replace(/^\s+|\s+$/g,&apos;&apos;);</div><div class="line">  &#125;;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+</blockquote>
+<ul>
+<li><p>create()</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">if(typeof Object.create !== &apos;function&apos;)&#123;</div><div class="line">  Object.create = function(o)&#123;</div><div class="line">    var F =function()&#123;&#125;;</div><div class="line">      F.prototype=o;</div><div class="line">      return new F（）;</div><div class="line">    </div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>isArray()<br>if(typeof Array.isArray !== ‘function’){<br>Array.isArray = function(o){<br> if(Object.prototype.toString.call(o)=== “[object Array]”){<br>   return true;<br> }else{<br>   return false;<br> }<br>}<br>}</p>
+</li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;常见内建对象扩展项&quot;&gt;&lt;a href=&quot;#常见内建对象扩展项&quot; class=&quot;headerlink&quot; title=&quot;常见内建对象扩展项&quot;&gt;&lt;/a&gt;常见内建对象扩展项&lt;/h2&gt;&lt;blockquote&gt;
+&lt;p&gt;讨论：基于相关内建原型来增加自定义方法这种技术，最常用且最
+    
+    </summary>
+    
+      <category term="前端开发" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/javaScript/"/>
+    
+      <category term="内建对象的扩展" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/javaScript/%E5%86%85%E5%BB%BA%E5%AF%B9%E8%B1%A1%E7%9A%84%E6%89%A9%E5%B1%95/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>初识Redux</title>
+    <link href="http://zhangyan123.github.io/2016/10/20/%E5%88%9D%E8%AF%86Redux/"/>
+    <id>http://zhangyan123.github.io/2016/10/20/初识Redux/</id>
+    <published>2016-10-20T04:30:01.000Z</published>
+    <updated>2017-05-04T03:10:25.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="为什么要react-redux"><a href="#为什么要react-redux" class="headerlink" title="为什么要react-redux?"></a>为什么要react-redux?</h1><p>理解使用action创建函数封装逻辑是react与redux配合的最佳实践，当所有的逻辑处理都被转移到redux中时，react就可以只负责渲染界面并发起action创建函数了。</p>
+<h2 id="Action"><a href="#Action" class="headerlink" title="Action"></a>Action</h2><p><code>Action</code>是JS一个普通的对象<code>{type: ‘type类型’}</code>其中type属性的值必须为一个字符串（用于描述将要执行的动作）；    </p>
+<h2 id="Reducer"><a href="#Reducer" class="headerlink" title="Reducer"></a>Reducer</h2><p><code>Reducer</code>是一个纯函数，形式为（state,action）=&gt;state,它的作用在于根据当前state和处理器action计算出下一个state并返回（等同于更新state）</p>
+<ul>
+<li>纯函数<br>与外界的通信渠道“一进一出”只有参数一个入口，只有return一个出口，内部计算不可造成外部变量变化，更不能直接修改参数（尤其不能去改state），不能在内部调用API或路由跳转。</li>
+<li>纯函数<br>简单理解，它只负责对参数按照指定方式计算并返回计算结果，不做任何复杂的功能性处理。<h2 id="Store"><a href="#Store" class="headerlink" title="Store"></a>Store</h2><code>Store</code>负责更新、查询、订阅state等多个工作，Store是全局唯一的，它将action、reducer、state等联系在了一起。</li>
+<li>生成store需要redux中的createStore方法：<code>import { createStore } from ‘redux’</code>,let store=createStore(reducer);</li>
+<li>提供getState()获取当前state值</li>
+<li>提供dispatch(action)发起action更新state</li>
+<li>提供subscribe(listener)订阅执行reducer之后的回调函数<h2 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h2>普通发起action的过程可以视为：根据实际条件判断action.type-&gt;生成对应action对象-&gt;发起action store.dispatch(action)。<br>我们知道react灵活之处在于通过更新state方便得更新页面元素，这样的更新过程未免过于繁琐，最好可以使用一个函数执行全部操作（从判断逻辑到发起指令）。</li>
+</ul>
+<h2 id="使用Redux-Thunk优化Action创建函数"><a href="#使用Redux-Thunk优化Action创建函数" class="headerlink" title="使用Redux Thunk优化Action创建函数"></a>使用Redux Thunk优化Action创建函数</h2><ul>
+<li>Redux Thunk中间件可以让action创建函数先不反回action对象，而是返回一个函数（这个函数接受store的两个方法dispatch和getState），通过这个函数延迟dispatch或者在满足指定条件的情况下dispatch。</li>
+<li>激活Redux Thunk中间件，只需要在createStore中加入applyMiddleware(thunk)；</li>
+</ul>
+<h2 id="优雅建立React与Redux之间的桥梁"><a href="#优雅建立React与Redux之间的桥梁" class="headerlink" title="优雅建立React与Redux之间的桥梁"></a>优雅建立React与Redux之间的桥梁</h2><p>react-redux是链接组件与状态的第三方库，它不仅可以给组件树中任意一组件绑定state和方法，还进行了性能优化，避免了不必要的重新渲染。    </p>
+<p>最佳实践：</p>
+<ul>
+<li>所有组件的顶层使用Provider组件给整个程序提供store；</li>
+<li>使用connect()将state和action创建函数绑定到组件当中。<br>一个connect()用例： <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">export default connect (</div><div class="line">  state =&gt; (&#123;counter: state.counter&#125;),//第一个参数是一个函数，将state中的counter传递给组件的counter属性</div><div class="line">  dispatch =&gt;bindActionCreators(ActionCreators.dispatch)//第二个参数用意是将action创建函数绑定到组件的props中</div><div class="line">)(Counter);</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="Provider和connect的工作原理"><a href="#Provider和connect的工作原理" class="headerlink" title="Provider和connect的工作原理"></a>Provider和connect的工作原理</h2><ul>
+<li>使用connect传递数据目的是实现跨级传递，操作上只需要两步：①顶层组件声明childContextTypes(如果不声明则无法使用getChildContext()),将需要传递的数据通过顶层组件中的getChildContext(){return data：this.data}放进context中；②需要使用context的子组件中声明contextTypes(如果声明则context对象为空)就可以直接通过context对象获取对应的属性值了。</li>
+<li>Provider只是一个使用context传递数据的react组件，它负责给程序 提供store，而connect()则负责生成新的名为Connect的组件，Connect组件在context中拿到store中获取的state和dispatch,最后讲state和经过dispatch加工的action创建函数连接到组件上。</li>
+<li>高阶组件（higher-order-Components）是一个函数，它接受React组件作为参数，并返回一个新的React组件。</li>
+<li>connect是一个嵌套函数，运行connect（）后生成一个高阶组件，接受需要绑定state及经过dispatch处理的action创建函数的组件，生成绑定好的同名组件。</li>
+<li>connect性能优化：我们知道state发生变化时组件会重新渲染，可以优化的地方在于哪里变化哪里repaint,一个页面中使用多个connect为不同的组件绑定不同的state中数据，则可以将组件之间隔离开，不会“一改全改”。</li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;为什么要react-redux&quot;&gt;&lt;a href=&quot;#为什么要react-redux&quot; class=&quot;headerlink&quot; title=&quot;为什么要react-redux?&quot;&gt;&lt;/a&gt;为什么要react-redux?&lt;/h1&gt;&lt;p&gt;理解使用action创建函数封装
+    
+    </summary>
+    
+      <category term="前端开发" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="框架" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%A1%86%E6%9E%B6/"/>
+    
+      <category term="React" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%A1%86%E6%9E%B6/React/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>策略模式在前端开发中的应用</title>
+    <link href="http://zhangyan123.github.io/2016/10/18/%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/"/>
+    <id>http://zhangyan123.github.io/2016/10/18/策略模式/</id>
+    <published>2016-10-18T08:50:04.000Z</published>
+    <updated>2017-07-20T02:32:10.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>待更新。。。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;待更新。。。&lt;/p&gt;
+
+    
+    </summary>
+    
+      <category term="设计模式" scheme="http://zhangyan123.github.io/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"/>
+    
+      <category term="策略模式" scheme="http://zhangyan123.github.io/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>React状态(state)</title>
+    <link href="http://zhangyan123.github.io/2016/10/17/React%E7%8A%B6%E6%80%81/"/>
+    <id>http://zhangyan123.github.io/2016/10/17/React状态/</id>
+    <published>2016-10-17T06:30:09.000Z</published>
+    <updated>2017-05-03T02:14:59.000Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="State-工作原理"><a href="#State-工作原理" class="headerlink" title="State 工作原理"></a>State 工作原理</h2><p>React.js是把UI当状态的函数,通知React数据变化的方法时调用setState(data,callback)。这个方法会合并data到this.state,<br>并重新渲染组件。渲染完成后,调用可选的callback回调。大部分情况下不需要提供callback,因为只要组件的状态改变了,React 调用<br>可选的callback回调。大部分情况下不需要提供callback,因为只要组件的状态改变了,React调用render()负责把界面更新到最新状态。</p>
+<h2 id="getInitialState"><a href="#getInitialState" class="headerlink" title="getInitialState"></a>getInitialState</h2><p>getInitialState()在整个组件的生命周期中只会执行一次,用来设置组件的初始state,也就是一个对象,这个对象可以通过this.state属性读取。当用户<br>点击组件,导致状态变化,this.setState方法就修改状态值,自动调用this.render方法,再次渲染组件。</p>
+<h2 id="replaceState"><a href="#replaceState" class="headerlink" title="replaceState()"></a>replaceState()</h2><p>replaceState()与setState()的区别在于它会用第一个参数去替代原状态而非进行合并。</p>
+<h2 id="哪些组件应该有State"><a href="#哪些组件应该有State" class="headerlink" title="哪些组件应该有State"></a>哪些组件应该有State</h2><p>大部分组件的工作应该是从props里取数据并渲染出来,但是有时需要对用户输入、服务器请求或者时间变化等做出响应,这时有需要对用户输入、服务器请求<br>或者时间变化等做出响应,这时才需要使用State。<br>尝试把尽可能多的组件无状态化,这样做可以可以隔离state,把它放在最合理的地方,也能减少冗余,同时易于解释程序运作过程。<br>常用的模式时创建多个只负责渲染数据的无状态组件,在它们的上层创建一个有状态组件并把它的状态通过props传给子级,这个有状态的组件封装了所有用户<br>的交互逻辑,而这些无状态组件则负责声明式的渲染数据。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;State-工作原理&quot;&gt;&lt;a href=&quot;#State-工作原理&quot; class=&quot;headerlink&quot; title=&quot;State 工作原理&quot;&gt;&lt;/a&gt;State 工作原理&lt;/h2&gt;&lt;p&gt;React.js是把UI当状态的函数,通知React数据变化的方法时调用se
+    
+    </summary>
+    
+      <category term="前端开发" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="框架" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%A1%86%E6%9E%B6/"/>
+    
+      <category term="React" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%A1%86%E6%9E%B6/React/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>观察者模式在前端开发中的应用</title>
+    <link href="http://zhangyan123.github.io/2016/10/16/%E8%A7%82%E5%AF%9F%E8%80%85%E6%A8%A1%E5%BC%8F/"/>
+    <id>http://zhangyan123.github.io/2016/10/16/观察者模式/</id>
+    <published>2016-10-16T08:45:09.000Z</published>
+    <updated>2017-08-16T09:09:48.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="前端开发中观察者模式实践"><a href="#前端开发中观察者模式实践" class="headerlink" title="前端开发中观察者模式实践"></a>前端开发中观察者模式实践</h1><p>观察者模式又叫发布订阅模式（Publsih/Subscrbe）,它使得方法之间传递信息变得更加通畅，减少耦合性解耦，减少了状态判断。<br>功能：发布者有一个publish方法，将其参数传递给所有订阅者需要该状态作为参数的方法。为了使观察者模式在代码中更容易实现，我们还可以尝试来写一个将普对象改造为发布者的方法，但一定记得在发布者对象那个中调用<code>publish(message)</code></p>
+<blockquote>
+<p>观察者的使用场合就是：当一个对象的改变需要同时改变其它对象，并且它不知道具体有多少对象需要改变的时候，就应该考虑使用观察者模式。</p>
+</blockquote>
+<p> 总的来说，观察者模式所做的工作就是在解耦，让耦合的双方都依赖于抽象，而不是依赖于具体。从而使得各自的变化都不会影响到另一边的变化。</p>
+<p> 解析：观察者对象其实是一个混合类，它负责将观察到的状态变化同时通知给关注这一变化的对象<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line"> //通用代码</div><div class="line">var observer = &#123;</div><div class="line">    //订阅</div><div class="line">    addSubscriber: function (callback) &#123;</div><div class="line">        this.subscribers[this.subscribers.length] = callback;</div><div class="line">    &#125;,</div><div class="line">    //退订</div><div class="line">    removeSubscriber: function (callback) &#123;</div><div class="line">        for (var i = 0; i &lt; this.subscribers.length; i++) &#123;</div><div class="line">            if (this.subscribers[i] === callback) &#123;</div><div class="line">                delete (this.subscribers[i]);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;,</div><div class="line">    //发布</div><div class="line">    publish: function (what) &#123;</div><div class="line">        for (var i = 0; i &lt; this.subscribers.length; i++) &#123;</div><div class="line">            if (typeof this.subscribers[i] === &apos;function&apos;) &#123;</div><div class="line">                this.subscribers[i](what);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;,</div><div class="line">    // 将对象o具有观察者功能</div><div class="line">    make: function (o) &#123; </div><div class="line">        for (var i in this) &#123;</div><div class="line">            o[i] = this[i];</div><div class="line">            o.subscribers = [];</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;;</div></pre></td></tr></table></figure></p>
+<p>根据jQuery1.7版新增的on/off功能，我们也可以定义jQuery版的观察者：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">(function ($) &#123;</div><div class="line"></div><div class="line">    var o = $(&#123;&#125;);</div><div class="line"></div><div class="line">    $.subscribe = function () &#123;</div><div class="line">        o.on.apply(o, arguments);</div><div class="line">    &#125;;</div><div class="line"></div><div class="line">    $.unsubscribe = function () &#123;</div><div class="line">        o.off.apply(o, arguments);</div><div class="line">    &#125;;</div><div class="line"></div><div class="line">    $.publish = function () &#123;</div><div class="line">        o.trigger.apply(o, arguments);</div><div class="line">    &#125;;</div><div class="line"></div><div class="line">&#125; (jQuery));</div></pre></td></tr></table></figure></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;前端开发中观察者模式实践&quot;&gt;&lt;a href=&quot;#前端开发中观察者模式实践&quot; class=&quot;headerlink&quot; title=&quot;前端开发中观察者模式实践&quot;&gt;&lt;/a&gt;前端开发中观察者模式实践&lt;/h1&gt;&lt;p&gt;观察者模式又叫发布订阅模式（Publsih/Subscrbe
+    
+    </summary>
+    
+      <category term="设计模式" scheme="http://zhangyan123.github.io/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"/>
+    
+      <category term="观察者模式" scheme="http://zhangyan123.github.io/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/%E8%A7%82%E5%AF%9F%E8%80%85%E6%A8%A1%E5%BC%8F/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>React创新语法JSX</title>
+    <link href="http://zhangyan123.github.io/2016/10/16/React%E6%B6%89%E5%8F%8A%E7%9A%84%E6%A6%82%E5%BF%B5/"/>
+    <id>http://zhangyan123.github.io/2016/10/16/React涉及的概念/</id>
+    <published>2016-10-16T06:30:00.000Z</published>
+    <updated>2017-06-14T02:45:42.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="解决什么问题"><a href="#解决什么问题" class="headerlink" title="解决什么问题"></a>解决什么问题</h1><p> 生来为了解决在开发中数据随时间变化的复杂用户界面，优化状态替换机制</p>
+<h1 id="主张"><a href="#主张" class="headerlink" title="主张"></a>主张</h1><p> 一次学习，随处可用</p>
+<h1 id="编写react组件"><a href="#编写react组件" class="headerlink" title="编写react组件"></a>编写react组件</h1><p> 编写react组件通常需要写一个继承自React.Component的类，并在render()中返回你要展示的视图<br> 但，如果这个组件只有一个render()方法，可以将其改为更为简洁的无状态函数，这也是<a href="https://github.com/libertyAlone/airbnb-javascript-style-guide-cn" target="_blank" rel="external">Airbnb编码规范</a>推荐的。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;解决什么问题&quot;&gt;&lt;a href=&quot;#解决什么问题&quot; class=&quot;headerlink&quot; title=&quot;解决什么问题&quot;&gt;&lt;/a&gt;解决什么问题&lt;/h1&gt;&lt;p&gt; 生来为了解决在开发中数据随时间变化的复杂用户界面，优化状态替换机制&lt;/p&gt;
+&lt;h1 id=&quot;主张&quot;&gt;&lt;a 
+    
+    </summary>
+    
+      <category term="前端开发" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="框架" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%A1%86%E6%9E%B6/"/>
+    
+      <category term="React" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%A1%86%E6%9E%B6/React/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>正则表达式是提高效率的利器（一）</title>
+    <link href="http://zhangyan123.github.io/2016/10/14/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%EF%BC%881%EF%BC%89/"/>
+    <id>http://zhangyan123.github.io/2016/10/14/正则表达式（1）/</id>
+    <published>2016-10-14T08:30:09.000Z</published>
+    <updated>2017-08-16T09:10:21.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="RegExp"><a href="#RegExp" class="headerlink" title="RegExp"></a>RegExp</h1><p>对于正则表达式，不同的语言有着不同的实现（每种语言的正则表达式互相之间的关系类似方言，同理不同表达），js采用的是Perl5的语法。</p>
+<ul>
+<li>构造正则对象的方式：<ul>
+<li>优选字面量方式：<code>var re = /^j.*t$/gim</code>     </li>
+<li>构造器方式：<code>var re = RegExp(‘^j.*t$’,’gim’)</code></li>
+</ul>
+</li>
+<li>正则对象的属性：<ul>
+<li>global 全局检测，默认false;</li>
+<li>ignoreCase  忽略大小写，默认false;</li>
+<li>multiline 跨行搜索，默认false;</li>
+<li>lastIndex 搜索开始位置索引值，默认0;</li>
+<li>source 存储了正则对象的pattern<br>以上属性均在对象创建时设置，使用对象过程中不可修改（除了lastIndex）.</li>
+</ul>
+</li>
+<li><p>应用正则对象的方法:</p>
+<ul>
+<li>test() 返回布尔值，被测字符串符合模式true</li>
+<li>exec() 返回匹配到字符串组成的数据<br>以上为正则对象自带方法，下面总结字符串对象中应用正则对象的场景     </li>
+<li>match() 返回匹配内容的数组</li>
+<li>search() 返回第一个匹配内容所在的位置索引值</li>
+<li><p>replace() 将匹配的文本替换为指定的字符串</p>
+<ol>
+<li><p>回调式替换     </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">s.replace(&quot;/(.*)@(.*)\.(.*)/g&quot;,callback);</div><div class="line">  function callback(匹配到的内容(例子函数体内使用match表示)，模式分组匹配到的字符串组，匹配内容所在位置索引值，被搜索的字符串)&#123;</div><div class="line">    return &quot;_&quot;+match;</div><div class="line">  &#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>(pattern)当匹配模式被放在括号中时，标明该匹配模式的匹配串是可获取的，这种模式成为捕获模式，使用<code>$1…$9</code>等参数来指代<br>(?:pattern)相对与捕获模式可以理解这种非捕获模式，捕获过程中直接跳过这些模式，eg:    </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&quot;regular expression&quot;.replace(&apos;/(?:r)(e)/g&apos;,&apos;$1$1&apos;);</div><div class="line">//&quot;eegular expeession&quot;匹配到了所有的‘re’并用ee替换,可见r没有被捕获进$1</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<div style="display:inline-block;"><img src="/images/replace.png" alt="myBlog"></div></li>
+<li>split() 以模式匹配的内容为分隔点，将字符串分割为数组</li>
+</ul>
+</li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;RegExp&quot;&gt;&lt;a href=&quot;#RegExp&quot; class=&quot;headerlink&quot; title=&quot;RegExp&quot;&gt;&lt;/a&gt;RegExp&lt;/h1&gt;&lt;p&gt;对于正则表达式，不同的语言有着不同的实现（每种语言的正则表达式互相之间的关系类似方言，同理不同表达），js采
+    
+    </summary>
+    
+      <category term="正则表达式" scheme="http://zhangyan123.github.io/categories/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/"/>
+    
+      <category term="方法" scheme="http://zhangyan123.github.io/categories/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/%E6%96%B9%E6%B3%95/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>React创新语法JSX</title>
+    <link href="http://zhangyan123.github.io/2016/10/14/React%E8%AF%AD%E6%B3%95Jsx/"/>
+    <id>http://zhangyan123.github.io/2016/10/14/React语法Jsx/</id>
+    <published>2016-10-14T06:30:09.000Z</published>
+    <updated>2017-04-22T06:58:26.000Z</updated>
+    
+    <content type="html"><![CDATA[<ul>
+<li><h2 id="类似HTML"><a href="#类似HTML" class="headerlink" title="类似HTML"></a>类似HTML</h2>HTML标签可以相互嵌套,支持大部分符合HTML规范的属性,支持以<code>data-</code>为前缀的自定义属性(自定义属性不加此前缀时React不予显示);</li>
+<li><h2 id="javaScript表达式"><a href="#javaScript表达式" class="headerlink" title="javaScript表达式"></a>javaScript表达式</h2>JSX允许在闭合标签中使用JS表达式,但要被{}所包裹,js表达式必须有返回值,因此不能再{}中直接使用if-else语句,但可以使用||和&amp;&amp;这样的比较运算符,<br>如果确实要使用if-else语句,可以将其写在函数中,然后在{}中调用;</li>
+<li><h2 id="样式"><a href="#样式" class="headerlink" title="样式"></a>样式</h2><p>JSX内联样式也是用style属性定义的,但属性值是- 样式对象 -而非字符串,并且样式对象中的属性名需要使用驼峰命名法;<br>eg:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">function demo()&#123;</div><div class="line">    return(</div><div class="line">        &lt;li&gt;</div><div class="line">            &lt;h3&gt;样式&lt;/h3&gt;</div><div class="line">            &lt;p style=&#123;&#123; color: &apos;red&apos;,fontSize:&apos;14px&apos;&#125;&#125;&gt;内联样式不是字符串,而是对象&lt;/p&gt;</div><div class="line">        &lt;/li&gt;</div><div class="line">    );</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><h2 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h2><p>JSX中注释内容写法与html相同,但要包裹在{}中;<br>eg:{/<em>这里是注释内容</em>/}</p>
+</li>
+<li><h2 id="数组"><a href="#数组" class="headerlink" title="数组"></a>数组</h2>JSX中的数组会自动展开,但是每一项的key属性值必须不同。</li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;ul&gt;
+&lt;li&gt;&lt;h2 id=&quot;类似HTML&quot;&gt;&lt;a href=&quot;#类似HTML&quot; class=&quot;headerlink&quot; title=&quot;类似HTML&quot;&gt;&lt;/a&gt;类似HTML&lt;/h2&gt;HTML标签可以相互嵌套,支持大部分符合HTML规范的属性,支持以&lt;code&gt;data-&lt;/co
+    
+    </summary>
+    
+      <category term="前端开发" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="框架" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%A1%86%E6%9E%B6/"/>
+    
+      <category term="React" scheme="http://zhangyan123.github.io/categories/%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%A1%86%E6%9E%B6/React/"/>
+    
+    
+      <category term="javaScript" scheme="http://zhangyan123.github.io/tags/javaScript/"/>
+    
+  </entry>
+  
+</feed>
